@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="estilo.css?v=9">
-<script src="negocio.js?v=9"></script>
-<script src="sistema.js?v=9"></script>
+<link rel="stylesheet" href="estilo.css?v=10">
+<script src="negocio.js?v=10"></script>
+<script src="sistema.js?v=10"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#B4532A">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -130,11 +130,17 @@ body.en-horario { padding-bottom: 0; }
   <div id="vLogin" hidden>
     <form class="card login" id="loginForm">
       <h1 style="font-size:1.6rem" id="lNombre">Panel</h1>
-      <p class="aviso">Entrá con el email y la contraseña del local.</p>
-      <label>Email<input id="lEmail" type="email" autocomplete="username" required></label>
-      <label>Contraseña<input id="lClave" type="password" autocomplete="current-password" required></label>
+      <p class="aviso">Entrá con la cuenta de Google del local.</p>
+      <button class="btn pri" type="button" id="lGoogle">Entrar con Google</button>
       <p class="error" id="lError" role="alert" hidden></p>
-      <button class="btn pri" type="submit">Entrar</button>
+      <details>
+        <summary class="aviso" style="cursor:pointer">Entrar con email y contraseña</summary>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+          <label>Email<input id="lEmail" type="email" autocomplete="username"></label>
+          <label>Contraseña<input id="lClave" type="password" autocomplete="current-password"></label>
+          <button class="btn sec" type="submit">Entrar</button>
+        </div>
+      </details>
     </form>
   </div>
 
@@ -826,6 +832,17 @@ $("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault(); $("lError").hidden = true;
   try { await T.login($("lEmail").value.trim(), $("lClave").value); }
   catch (err) { $("lError").textContent = "Email o contraseña incorrectos."; $("lError").hidden = false; }
+});
+$("lGoogle").addEventListener("click", async () => {
+  $("lError").hidden = true;
+  try { await T.loginGoogle(); }
+  catch (err) {
+    if (err && err.code === "auth/popup-closed-by-user") return;
+    $("lError").textContent = err && err.code === "auth/unauthorized-domain"
+      ? "Esta dirección no está autorizada en Firebase (Authentication → Dominios autorizados)."
+      : "No se pudo entrar con Google. Probá de nuevo.";
+    $("lError").hidden = false;
+  }
 });
 
 (async () => {

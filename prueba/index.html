@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Peluquería</title>
+<meta name="description" content="Precios, trabajos y reserva de turnos online.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="estilo.css?v=10">
+<script src="negocio.js?v=10"></script>
+<script src="sistema.js?v=10"></script>
+<link rel="icon" type="image/svg+xml" href="icono.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+</head>
+<body>
+<div class="demo" id="demo" hidden>Página de ejemplo · los datos son inventados</div>
+
+<main class="wrap">
+  <header class="portada">
+    <span class="etiqueta" id="rubro"></span>
+    <h1 id="nombre"></h1>
+    <p class="suave" id="slogan" style="margin:0;font-size:1.1rem"></p>
+    <span class="estado" id="estado"><i></i><span></span></span>
+    <div class="acciones">
+      <a class="btn pri" href="#reservar">Reservar turno</a>
+      <a class="btn sec" href="#precios">Ver precios</a>
+    </div>
+  </header>
+
+  <section id="precios">
+    <span class="etiqueta">Servicios</span>
+    <h2>Precios</h2>
+    <div class="lista" id="servicios"></div>
+  </section>
+
+  <section id="trabajos">
+    <span class="etiqueta">Resultados</span>
+    <h2>Nuestros trabajos</h2>
+    <div class="galeria" id="galeria"></div>
+    <a class="btn sec" id="igLink" hidden target="_blank" rel="noopener">Ver más en Instagram</a>
+  </section>
+
+  <section id="equipo-sec">
+    <span class="etiqueta">Equipo</span>
+    <h2>Elegí con quién</h2>
+    <div class="equipo" id="equipo"></div>
+  </section>
+
+  <section id="reservar">
+    <span class="etiqueta">Turnos</span>
+    <h2>Reservá tu turno</h2>
+    <div class="card" id="reserva">
+      <label>Servicio<select id="fServ"></select></label>
+      <label id="persLabel">Con quién<select id="fPers"></select></label>
+      <div class="campo"><span class="lbl">Día</span><div class="dias" id="fDias"></div></div>
+      <div class="campo"><span class="lbl">Hora</span><div class="horas-grid" id="fHoras"><span class="suave">Elegí un día.</span></div></div>
+      <div class="fila">
+        <label>Tu nombre<input id="fNombre" autocomplete="given-name" maxlength="40" placeholder="Ej: Juan"></label>
+        <label>Celular<input id="fCel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="09X XXX XXX"></label>
+      </div>
+      <p class="error" id="fError" role="alert" hidden></p>
+      <button class="btn pri" id="fOk" type="button">Confirmar turno</button>
+      <p class="aviso" id="modoAviso"></p>
+      <p class="aviso">Tu nombre y celular se usan solo para tu turno y para avisarte si hay un cambio. No se comparten con nadie.</p>
+    </div>
+    <div class="card listo" id="confirmado" hidden>
+      <span class="check" aria-hidden="true">✓</span>
+      <h2>¡Turno confirmado!</h2>
+      <p id="cResumen" style="margin:0"></p>
+      <p class="aviso">Si no podés venir, <a class="txt-link" id="cCancel">cancelalo acá</a> así le dejás el lugar a otra persona. Guardá este link: es la forma de cancelar tu turno.</p>
+      <button class="btn sec" id="cCopiar" type="button">Copiar link para cancelar</button>
+      <button class="btn sec" id="cOtro" type="button">Reservar otro turno</button>
+      <p class="aviso">¿Algún problema? <a class="txt-link" id="cWa" target="_blank" rel="noopener">Escribinos por WhatsApp</a></p>
+    </div>
+  </section>
+
+  <section id="donde">
+    <span class="etiqueta">Dónde estamos</span>
+    <h2>Horarios y dirección</h2>
+    <div class="horas" id="horas"></div>
+    <a class="btn sec" id="mapa" target="_blank" rel="noopener"></a>
+  </section>
+
+  <footer id="pie"></footer>
+</main>
+
+<nav class="barra" aria-label="Acciones rápidas"><div class="wrap">
+  <a class="btn sec" id="waBtn" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.3-4.4A9 9 0 1 1 21 12z"/></svg>Consultar</a>
+  <a class="btn pri" href="#reservar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Reservar</a>
+</div></nav>
+
+<script>
+const N = NEGOCIO, U = Turnos.U, $ = (id) => document.getElementById(id), el = U.el;
+const DIAS3 = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+/* Datos generales */
+const r = document.documentElement.style;
+r.setProperty("--acento", N.colores.acento); r.setProperty("--fondo", N.colores.fondo); r.setProperty("--tinta", N.colores.tinta);
+document.title = N.nombre + " · " + N.rubro + " en " + N.ciudad;
+$("demo").hidden = !N.demo;
+$("rubro").textContent = N.rubro + " · " + N.ciudad;
+$("nombre").textContent = N.nombre;
+$("slogan").textContent = N.slogan;
+$("waBtn").href = U.wa(N.whatsapp, "Hola " + N.nombre + ", tengo una consulta.");
+$("mapa").href = N.mapa; $("mapa").textContent = N.direccion + " · Abrir en el mapa";
+$("pie").textContent = N.nombre + " · " + N.direccion + ", " + N.ciudad;
+if (N.demo) $("pie").append(el("br"), el("a", { href: "panel.html", style: "color:inherit", text: "Ver el panel del peluquero (demo)" }));
+if (N.instagram) { $("igLink").hidden = false; $("igLink").href = "https://instagram.com/" + N.instagram; }
+
+/* Abierto / cerrado (se recalcula cada minuto) */
+function estado() {
+  const ahora = new Date(), m = ahora.getHours() * 60 + ahora.getMinutes(), hoy = Turnos.tramosDeDow(ahora.getDay());
+  const tramo = hoy.find(([a, b]) => m >= U.aMin(a) && m < U.aMin(b));
+  let txt = "Cerrado";
+  if (tramo) txt = "Abierto ahora · hasta las " + tramo[1];
+  else {
+    const prox = hoy.find(([a]) => U.aMin(a) > m);
+    if (prox) txt = "Cerrado · abre hoy a las " + prox[0];
+    else for (let i = 1; i <= 7; i++) {
+      const d = (ahora.getDay() + i) % 7, t = Turnos.tramosDeDow(d);
+      if (t.length) { txt = "Cerrado · abre " + (i === 1 ? "mañana" : U.DIAS[d].toLowerCase()) + " a las " + t[0][0]; break; }
+    }
+  }
+  $("estado").classList.toggle("abierto", !!tramo);
+  $("estado").lastElementChild.textContent = txt;
+}
+// Se dibuja recién cuando se leyó el horario guardado (ver cargarDias); si no se puede leer, vale el de negocio.js.
+setInterval(estado, 60000);
+
+/* Servicios, trabajos, equipo, horarios */
+$("servicios").replaceChildren(...N.servicios.map(s => el("div", { class: "serv" },
+  el("div", {}, el("b", { text: s.nombre }), el("small", { text: [s.minutos + " min", s.detalle].filter(Boolean).join(" · ") })),
+  el("span", { class: "precio", text: U.money(s.precio) }))));
+
+const fotos = N.trabajos.length ? N.trabajos : Array(6).fill(null);
+$("galeria").replaceChildren(...fotos.map((f, i) => f
+  ? el("div", {}, el("img", { src: f, alt: "Trabajo " + (i + 1) + " de " + N.nombre, loading: "lazy" }))
+  : el("div", { class: "ej", text: "Foto de un trabajo" })));
+
+$("equipo").replaceChildren(...N.equipo.map(p => el("div", { class: "persona" },
+  el("div", { class: "avatar" }, p.foto ? el("img", { src: p.foto, alt: p.nombre }) : p.nombre[0]),
+  el("div", {}, el("b", { text: p.nombre }), el("div", { class: "suave", style: "font-size:.85rem", text: p.especialidad })),
+  el("a", { class: "btn pri", href: "#reservar", text: "Reservar con " + p.nombre, onclick: () => { $("fPers").value = p.id; cargarHoras(); } }))));
+if (N.equipo.length < 2) $("equipo-sec").hidden = true;
+
+function pintarHorarios() {
+  const hoyN = new Date().getDay();
+  $("horas").replaceChildren(...[1, 2, 3, 4, 5, 6, 0].flatMap(d => {
+    const t = Turnos.tramosDeDow(d), c = d === hoyN ? "hoy" : null;
+    return [el("span", { class: c, text: U.DIAS[d] }), el("span", { class: c, text: t.length ? t.map(x => x.join(" a ")).join(" y ") : "Cerrado" })];
+  }));
+  estado();
+}
+
+/* ---------- Reserva ---------- */
+let T = null, diasMap = {}, libres = [];
+const sel = { fecha: null, hora: null, est: null };
+const fechas = Array.from({ length: N.diasParaReservar || 14 }, (_, i) => U.sumarDias(U.hoyIso(), i));
+N.servicios.forEach((s, i) => $("fServ").append(el("option", { value: String(i), text: s.nombre + " · " + U.money(s.precio) })));
+$("fPers").append(el("option", { value: "", text: "Me da igual" }));
+N.equipo.forEach(p => $("fPers").append(el("option", { value: p.id, text: p.nombre })));
+if (N.equipo.length < 2) $("persLabel").hidden = true;
+
+const error = (m) => { $("fError").textContent = m; $("fError").hidden = !m; };
+
+function pintarDias() {
+  $("fDias").replaceChildren(...fechas.map(f => {
+    const d = U.fechaDe(f), ok = Turnos.abiertoDia(f, diasMap), on = f === sel.fecha;
+    return el("button", { type: "button", class: "dia" + (on ? " on" : ""), "aria-pressed": String(on), disabled: !ok,
+      "aria-label": U.fechaLarga(f) + (ok ? "" : ", sin turnos"),
+      onclick: () => { sel.fecha = f; sel.hora = null; pintarDias(); cargarHoras(); } },
+      el("small", { text: f === U.hoyIso() ? "Hoy" : DIAS3[d.getDay()] }), el("b", { text: String(d.getDate()) }));
+  }));
+}
+function pintarHoras() {
+  $("fHoras").replaceChildren(...(libres.length
+    ? libres.map(x => el("button", { type: "button", class: "hora" + (sel.hora === x.hora ? " on" : ""), "aria-pressed": String(sel.hora === x.hora), text: x.hora,
+        onclick: () => { sel.hora = x.hora; sel.est = x.estilista; pintarHoras(); } }))
+    : [el("span", { class: "suave", text: "No quedan horarios este día. Probá con otro." })]));
+}
+async function cargarHoras() {
+  if (!T || !sel.fecha) return;
+  sel.hora = null;
+  $("fHoras").replaceChildren(el("span", { class: "suave", text: "Buscando horarios…" }));
+  try {
+    const s = N.servicios[$("fServ").value], oc = await T.ocupados(sel.fecha);
+    libres = Turnos.horariosLibres(sel.fecha, s.minutos, $("fPers").value, oc);
+    pintarHoras();
+  } catch (e) { $("fHoras").replaceChildren(el("span", { class: "error", text: "No se pudieron cargar los horarios. Revisá tu conexión." })); }
+}
+async function cargarDias() {
+  diasMap = await T.dias(fechas[0], fechas[fechas.length - 1]);
+  Turnos.aplicarHorario(diasMap);   // el horario guardado por el peluquero manda sobre el de negocio.js
+  pintarHorarios();
+  if (!sel.fecha || !Turnos.abiertoDia(sel.fecha, diasMap)) sel.fecha = fechas.find(f => Turnos.abiertoDia(f, diasMap)) || null;
+  pintarDias();
+  if (sel.fecha) cargarHoras(); else $("fHoras").replaceChildren(el("span", { class: "suave", text: "No hay días disponibles por ahora." }));
+}
+$("fServ").addEventListener("change", cargarHoras);
+$("fPers").addEventListener("change", cargarHoras);
+
+$("fOk").addEventListener("click", async () => {
+  error("");
+  const nombre = $("fNombre").value.trim(), cel = $("fCel").value.trim();
+  if (!sel.fecha) return error("Elegí un día.");
+  if (!sel.hora) return error("Elegí un horario.");
+  if (!nombre) return error("Escribí tu nombre.");
+  if (!U.celValido(cel)) return error("Revisá el celular (ej: 099 123 456).");
+  const s = N.servicios[$("fServ").value];
+  const t = { fecha: sel.fecha, hora: sel.hora, minutos: s.minutos, servicio: s.nombre, estilista: sel.est,
+    nombre, celular: U.normalizarCel(cel), estado: "confirmado", bloques: Turnos.idsBloques(sel.fecha, sel.est, sel.hora, s.minutos) };
+  $("fOk").disabled = true; $("fOk").textContent = "Reservando…";
+  try {
+    const idTurno = await T.reservar(t);
+    const linkCancel = new URL("cancelar.html?t=" + encodeURIComponent(idTurno), location.href).href;
+    $("cCancel").href = linkCancel;
+    $("cCopiar").textContent = "Copiar link para cancelar";
+    $("cCopiar").onclick = async () => {
+      try { await navigator.clipboard.writeText(linkCancel); $("cCopiar").textContent = "✓ Link copiado"; }
+      catch (e) { $("cCopiar").textContent = "No se pudo copiar: tocá “cancelalo acá” y guardá esa página"; }
+    };
+    const p = U.estilista(t.estilista);
+    $("cResumen").textContent = s.nombre + (N.equipo.length > 1 ? " con " + p.nombre : "") + ", el " + U.fechaCorta(t.fecha) + " a las " + t.hora + ".";
+    $("cWa").href = U.wa(N.whatsapp, "Hola, soy " + nombre + ". Tengo turno el " + U.fechaCorta(t.fecha) + " a las " + t.hora + " y quería consultarte algo.");
+    $("reserva").hidden = true; $("confirmado").hidden = false;
+    $("confirmado").scrollIntoView({ block: "center" });
+  } catch (e) {
+    if (e.message === "red") error("No se pudo reservar. Revisá tu conexión y probá de nuevo.");
+    else { error("Ese horario se acaba de ocupar o el día se cerró. Elegí otro."); await cargarDias(); }
+  } finally { $("fOk").disabled = false; $("fOk").textContent = "Confirmar turno"; }
+});
+$("cOtro").addEventListener("click", () => { $("confirmado").hidden = true; $("reserva").hidden = false; cargarDias(); });
+
+(async () => {
+  try {
+    T = await Turnos.conectar();
+    if (T.modo === "demo") $("modoAviso").textContent = "Modo demo: las reservas se guardan solo en este dispositivo.";
+    await cargarDias();
+  } catch (e) {
+    pintarHorarios();
+    $("fHoras").replaceChildren(el("span", { class: "error", text: "La reserva online no está disponible ahora. Escribinos por WhatsApp." }));
+  }
+})();
+</script>
+</body>
+</html>

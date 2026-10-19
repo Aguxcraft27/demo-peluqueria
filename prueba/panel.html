@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="estilo.css?v=10">
+<script src="negocio.js?v=10"></script>
+<script src="sistema.js?v=10"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#B4532A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Turnos">
+<link rel="icon" type="image/svg+xml" href="icono.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+body { padding-bottom: 32px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 0 8px; }
+.top h1 { font-size: 1.5rem; font-weight: 800; }
+.top small { display: block; color: var(--suave); font-size: .8rem; }
+.link { background: none; border: 0; color: var(--suave); font: 500 .9rem var(--body); text-decoration: underline; cursor: pointer; padding: 6px; }
+.tira { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; }
+.tira .dia { position: relative; }
+.tira .dia .n { font-size: .7rem; font-weight: 600; color: var(--acento); }
+.tira .dia.on .n { color: #fff; }
+.tira .dia.cerrado { opacity: .5; }
+.cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cab h2 { font-size: 1.4rem; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--tinta); font-size: 1rem; font-weight: 600; flex-direction: row; cursor: pointer; }
+.switch small { display: block; font-weight: 400; font-size: .82rem; color: var(--suave); }
+.switch input { appearance: none; -webkit-appearance: none; width: 52px; height: 30px; flex-shrink: 0; border-radius: 999px; background: var(--linea); position: relative; cursor: pointer; padding: 0; border: 0; transition: background .2s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+.switch input:checked { background: var(--ok); }
+.switch input:checked::after { transform: translateX(22px); }
+.switch input:disabled { opacity: .5; cursor: default; }
+.filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.filtro { font: 500 .88rem var(--body); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--linea); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+.filtro.on { background: var(--tinta); color: var(--fondo); border-color: var(--tinta); }
+.agenda { display: flex; flex-direction: column; background: var(--sup); border: 1px solid var(--linea); border-radius: 14px; }
+.slot { display: grid; grid-template-columns: 54px 1fr; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--linea); align-items: start; }
+.slot:first-child { border-top: 0; }
+.slot > time { font-weight: 600; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.slot.libre > time, .slot.libre .vacio { color: color-mix(in srgb, var(--tinta) 35%, var(--fondo)); font-weight: 400; }
+.turno { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: var(--fondo); border-left: 4px solid var(--acento); }
+.turno + .turno { margin-top: 6px; }
+.turno b { font-size: 1rem; }
+.turno .det { font-size: .85rem; color: var(--suave); }
+.turno .acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.turno .acc .btn { padding: 7px 12px; font-size: .85rem; }
+.cancelados { display: flex; flex-direction: column; gap: 10px; }
+.cancelados .turno { border-left-color: var(--cerrado); }
+.ok-txt { color: var(--ok); font-weight: 600; font-size: .85rem; }
+.resumen { display: flex; gap: 16px; font-size: .9rem; color: var(--suave); }
+.resumen b { color: var(--tinta); font-family: var(--display); font-size: 1.3rem; display: block; }
+.confirmar { background: color-mix(in srgb, var(--cerrado) 8%, var(--sup)); border-color: color-mix(in srgb, var(--cerrado) 35%, var(--linea)); }
+.confirmar .acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.confirmar .aviso { margin-top: -6px; }
+.confirmar .acc .btn { flex: 1 1 auto; }
+.cerrados summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
+.cerrados .lista-c { display: flex; flex-direction: column; margin-top: 10px; }
+.cerrados .item-c { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--linea); }
+.cerrados .item-c small { display: block; color: var(--suave); font-size: .8rem; }
+.cerrados .item-c .btn { padding: 7px 12px; font-size: .85rem; flex-shrink: 0; }
+.cerrados .atajo { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--linea); }
+.link.ico { display: inline-flex; align-items: center; gap: 4px; }
+.link.ico svg.i { width: 16px; height: 16px; }
+.top > div:last-child { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+.toast { position: fixed; z-index: 20; left: 16px; right: 16px; top: calc(12px + env(safe-area-inset-top, 0px)); max-width: 440px; margin: 0 auto; background: var(--tinta); color: var(--fondo); border-radius: 12px; padding: 12px 16px; font-size: .92rem; font-weight: 500; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+
+/* Pantalla "Horario comercial" */
+body.en-horario { padding-bottom: 0; }
+.hcab { display: flex; align-items: center; gap: 12px; padding: 16px 0 8px; }
+.hcab h1 { font-size: 1.5rem; font-weight: 800; }
+.atras { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; border: 1px solid var(--linea); background: var(--sup); color: var(--tinta); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.hlista { list-style: none; margin: 14px 0 0; padding: 0; background: var(--sup); border: 1px solid var(--linea); border-radius: 14px; overflow: hidden; }
+.hfila { border-top: 1px solid var(--linea); }
+.hfila:first-child { border-top: 0; }
+.hfila-cab { display: flex; align-items: center; gap: 12px; padding: 4px 16px; }
+.hinfo { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; text-align: left; background: none; border: 0; padding: 10px 0; font: inherit; color: var(--tinta); cursor: pointer; }
+.hinfo b { font-weight: 700; font-size: 1.02rem; }
+.hinfo small { color: var(--suave); font-size: .86rem; overflow-wrap: anywhere; }
+.hinfo.cerrada { cursor: default; }
+.hfila .switch { flex-shrink: 0; }
+.hfila > .error { padding: 0 16px 10px; }
+.heditor { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px; }
+.htramo { display: grid; grid-template-columns: 1fr 1fr 44px; gap: 8px; align-items: end; }
+.htramo input[type=time] { padding: 11px 6px 11px 10px; }
+.htramo input[type=time]::-webkit-calendar-picker-indicator { margin-left: 0; padding: 0; }
+.htramo .quitar { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--linea); background: var(--fondo); color: var(--cerrado); font-size: 1.1rem; cursor: pointer; padding: 0; }
+.htramo .quitar:disabled { opacity: .35; cursor: default; }
+.heditor .acc2 { display: flex; gap: 8px; flex-wrap: wrap; }
+.heditor .acc2 .btn { padding: 9px 14px; font-size: .88rem; }
+.hbarra { position: sticky; bottom: 0; z-index: 5; display: flex; gap: 10px; margin: 16px -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--fondo) 92%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--linea); }
+.hbarra .btn { padding: 15px 20px; }
+.hbarra .pri { flex: 1; font-size: 1.08rem; }
+#hPregunta { margin-top: 14px; }
+.nom { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.marca { font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--suave); border: 1px solid var(--linea); border-radius: 999px; padding: 1px 8px; }
+.turno.bloqueo { border-left-color: var(--suave); background: color-mix(in srgb, var(--tinta) 9%, var(--fondo)); }
+.turno.bloqueo b { color: var(--suave); }
+.acc-dia { display: flex; gap: 10px; flex-wrap: wrap; }
+.acc-dia .btn { flex: 1 1 auto; }
+.formu h2 { font-size: 1.2rem; }
+.formu .acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.formu .acc .btn { flex: 1 1 auto; }
+.formu input[type=time] { padding: 11px 8px 11px 10px; }
+.recs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.recs summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
+.recs[open] summary { margin-bottom: 4px; }
+.rec { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--linea); }
+.rec small { display: block; color: var(--suave); font-size: .82rem; }
+.rec .btn { padding: 8px 12px; font-size: .85rem; flex-shrink: 0; }
+.rec .der { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.rec-cab { font-weight: 600; font-size: .82rem; color: var(--suave); }
+.fecha-cab { font-weight: 600; font-size: .85rem; padding: 8px 14px 2px; color: var(--suave); border-top: 1px solid var(--linea); }
+.fecha-cab:first-child { border-top: 0; }
+.login { max-width: 380px; margin: 12vh auto 0; }
+.modo { background: var(--acento-suave); color: var(--tinta); border-radius: 12px; padding: 10px 14px; font-size: .85rem; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- Login (solo en modo real) -->
+  <div id="vLogin" hidden>
+    <form class="card login" id="loginForm">
+      <h1 style="font-size:1.6rem" id="lNombre">Panel</h1>
+      <p class="aviso">Entrá con la cuenta de Google del local.</p>
+      <button class="btn pri" type="button" id="lGoogle">Entrar con Google</button>
+      <p class="error" id="lError" role="alert" hidden></p>
+      <details>
+        <summary class="aviso" style="cursor:pointer">Entrar con email y contraseña</summary>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+          <label>Email<input id="lEmail" type="email" autocomplete="username"></label>
+          <label>Contraseña<input id="lClave" type="password" autocomplete="current-password"></label>
+          <button class="btn sec" type="submit">Entrar</button>
+        </div>
+      </details>
+    </form>
+  </div>
+
+  <!-- Panel -->
+  <div id="vPanel" hidden>
+    <header class="top">
+      <div><small>Panel de turnos</small><h1 id="pNombre"></h1></div>
+      <div><button class="link ico" id="verHorario" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Horario</button><a class="link" id="verWeb" target="_blank" rel="noopener">Ver web</a><button class="link" id="salir" type="button">Salir</button></div>
+    </header>
+    <div class="modo" id="modoDemo" hidden><span>Modo demo: los datos se guardan solo en este dispositivo.</span><button class="link" id="reiniciar" type="button">Reiniciar</button></div>
+
+    <section style="padding-top:12px">
+      <details class="card recs" id="recs" hidden></details>
+      <div class="tira" id="tira" aria-label="Días"></div>
+
+      <div class="card">
+        <div class="cab">
+          <h2 id="dTitulo"></h2>
+          <div class="resumen"><span><b id="dCant">0</b>turnos</span></div>
+        </div>
+        <label class="switch"><span>Reservas abiertas<small id="dSwitchTxt"></small></span><input type="checkbox" role="switch" id="dSwitch"></label>
+        <div class="card confirmar" id="dPregunta" hidden role="alert">
+          <b id="dPreguntaTxt"></b>
+          <p class="aviso" id="dPreguntaSub" hidden></p>
+          <div class="acc" id="dPreguntaAcc"></div>
+        </div>
+      </div>
+
+      <div class="acc-dia" id="accDia">
+        <button class="btn pri" id="bAgregar" type="button">+ Agregar turno</button>
+        <button class="btn sec" id="bBloquear" type="button">Bloquear horario</button>
+      </div>
+
+      <form class="card formu" id="fTurno" hidden novalidate>
+        <h2>Agregar turno</h2>
+        <p class="aviso">Para clientes que llaman o vienen al local. Ocupa el horario igual que una reserva online.</p>
+        <label>Servicio<select id="aServ"></select></label>
+        <label id="aEstLabel">Con quién<select id="aEst"></select></label>
+        <label>Hora<select id="aHora"></select></label>
+        <label id="aOtraLabel" hidden>Otra hora<input id="aOtra" type="time" step="900"></label>
+        <div class="fila">
+          <label>Nombre<input id="aNombre" autocomplete="off" maxlength="40" placeholder="Ej: Juan"></label>
+          <label>Celular (opcional)<input id="aCel" type="tel" inputmode="tel" autocomplete="off" maxlength="20" placeholder="09X XXX XXX"></label>
+        </div>
+        <p class="error" id="aError" role="alert" hidden></p>
+        <div class="acc"><button class="btn pri" id="aOk" type="submit">Guardar turno</button><button class="btn sec" id="aCancelar" type="button">Cancelar</button></div>
+      </form>
+
+      <div class="card formu" id="fBloq" hidden>
+        <h2>Bloquear horario</h2>
+        <p class="aviso">Esas horas no se van a poder reservar. Por ejemplo: el médico o un trámite.</p>
+        <div class="fila">
+          <label>Desde<input id="bDesde" type="time" step="900"></label>
+          <label>Hasta<input id="bHasta" type="time" step="900"></label>
+        </div>
+        <label id="bQuienLabel">A quién<select id="bQuien"></select></label>
+        <label>Motivo (opcional)<input id="bMotivo" maxlength="40" autocomplete="off" placeholder="Ej: médico"></label>
+        <p class="error" id="bError" role="alert" hidden></p>
+        <div class="card confirmar" id="bPregunta" hidden role="alert">
+          <b id="bPreguntaTxt"></b>
+          <p class="aviso" id="bPreguntaSub"></p>
+          <div class="acc" id="bPreguntaAcc"></div>
+        </div>
+        <div class="acc" id="bAcc"><button class="btn pri" id="bOk" type="button">Bloquear</button><button class="btn sec" id="bCancelar" type="button">Cancelar</button></div>
+      </div>
+
+      <details class="card cerrados" id="cerrados">
+        <summary id="cerrSum">Días cerrados</summary>
+        <div class="lista-c" id="cerrLista"></div>
+        <div class="atajo">
+          <p class="aviso" id="cerrFijos"></p>
+          <button class="btn sec" id="cerrHorario" type="button">Cambiar el horario comercial</button>
+        </div>
+      </details>
+
+      <div class="cancelados" id="cancelados" hidden>
+        <h2 style="font-size:1.25rem">Cancelados: avisá a cada uno</h2>
+        <p class="aviso">Tocá "Avisar" y se abre WhatsApp con el mensaje escrito y el link para que elija otro horario. Los que canceló el cliente no necesitan aviso.</p>
+        <div class="agenda" id="cancList"></div>
+      </div>
+
+      <div class="filtros" id="filtros"></div>
+      <div class="agenda" id="agenda"></div>
+      <button class="btn sec" id="dCancelarDia" type="button">Cancelar todos los turnos de este día</button>
+    </section>
+  </div>
+
+  <!-- Horario comercial -->
+  <div id="vHorario" hidden>
+    <header class="hcab">
+      <button class="atras" id="hAtras" type="button" aria-label="Volver al panel sin guardar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h1>Horario comercial</h1>
+    </header>
+    <p class="aviso">Prendé los días que atendés y poné el horario. Un día apagado queda cerrado para siempre, hasta que lo vuelvas a prender. Para cerrar solo una fecha, usá el interruptor de ese día en el panel.</p>
+    <ul class="hlista" id="hLista"></ul>
+    <div class="card confirmar" id="hPregunta" hidden role="alert">
+      <b id="hPreguntaTxt"></b>
+      <p class="aviso" id="hPreguntaSub"></p>
+      <div class="acc" id="hPreguntaAcc"></div>
+    </div>
+    <p class="error" id="hError" role="alert" hidden style="margin-top:12px"></p>
+    <div class="hbarra">
+      <button class="btn sec" id="hCancelar" type="button">Cancelar</button>
+      <button class="btn pri" id="hGuardar" type="button">Guardar</button>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const N = NEGOCIO, U = Turnos.U, $ = (id) => document.getElementById(id), el = U.el;
+const DIAS3 = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const r = document.documentElement.style;
+r.setProperty("--acento", N.colores.acento); r.setProperty("--fondo", N.colores.fondo); r.setProperty("--tinta", N.colores.tinta);
+document.title = "Panel · " + N.nombre;
+$("pNombre").textContent = N.nombre; $("lNombre").textContent = N.nombre;
+$("verWeb").href = "index.html";
+
+let T = null, turnos = [], diasMap = {}, dia = U.hoyIso(), filtro = "", confirmando = null;
+// pregunta = cuadro "¿Solo ese día o siempre?": { tipo: "cerrar" | "cancelar" | "abrir", paso: "alcance" | "turnos", ref: fecha o null, dow: 0..6, alcance }
+let pregunta = null;
+const DESDE = () => U.sumarDias(U.hoyIso(), -1), HASTA = () => U.sumarDias(U.hoyIso(), (N.diasParaReservar || 14) + 7);
+
+// Aviso dentro de la página (nunca alert)
+let toastT = null;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 4500);
+}
+const ORDEN = [1, 2, 3, 4, 5, 6, 0];   // Lunes → Domingo
+let enHorario = false;
+const esBloqueo = Turnos.esBloqueo;
+// Los bloqueos (tipo "bloqueo") viven en la misma colección que los turnos, pero no son turnos: no se cuentan ni se cancelan.
+const confirmadosDe = (f) => turnos.filter(t => t.fecha === f && t.estado === "confirmado" && !esBloqueo(t));
+const bloqueosDe = (f) => turnos.filter(t => t.fecha === f && esBloqueo(t));
+let recsAbierto = false, form = null;   // formulario abierto: null | "turno" | "bloqueo"
+/* ---- Días de la semana (cierres semanales) ---- */
+const dowDe = (f) => U.fechaDe(f).getDay();
+const esFecha = (k) => /^\d{4}-\d{2}-\d{2}$/.test(k);
+const cerradoSemana = (d) => { const x = diasMap[Turnos.idSemana(d)]; return !!x && x.abierto === false; };
+const todosLos = (d) => "todos los " + U.DIAS[d].toLowerCase() + (d === 0 || d === 6 ? "s" : "");   // "todos los jueves"
+const mayus = (t) => t[0].toUpperCase() + t.slice(1);
+// Turnos confirmados de hoy en adelante que caen en ese día de la semana
+const turnosDeSemana = (d) => turnos.filter(t => t.estado === "confirmado" && !esBloqueo(t) && t.fecha >= U.hoyIso() && dowDe(t.fecha) === d);
+const fechasConDato = (d) => Object.keys(diasMap).filter(k => esFecha(k) && k >= U.hoyIso() && dowDe(k) === d);
+const listaDe = (alcance, p) => alcance === "dia" ? confirmadosDe(p.ref) : turnosDeSemana(p.dow);
+// "jueves 22/10 (2), jueves 29/10 (1)"
+function resumenTurnos(lista) {
+  const por = {}; lista.forEach(t => { por[t.fecha] = (por[t.fecha] || 0) + 1; });
+  return Object.keys(por).sort().map(f => U.fechaCorta(f) + " (" + por[f] + ")").join(", ");
+}
+const nTurnos = (n) => n + (n === 1 ? " turno" : " turnos");
+
+async function recargar() {
+  try { [turnos, diasMap] = await Promise.all([T.turnos(DESDE(), HASTA()), T.dias(DESDE(), HASTA())]); Turnos.aplicarHorario(diasMap); pintar(); }
+  catch (e) {
+    console.error(e);
+    // Un TypeError casi siempre es una versión vieja de sistema.js guardada en el navegador, no un problema de red.
+    const txt = e instanceof TypeError ? "La página se actualizó. Recargala para ver los turnos." : "No se pudieron cargar los turnos. Revisá la conexión.";
+    $("agenda").replaceChildren(el("div", { class: "slot" }, el("span"), el("span", { class: "error", text: txt })));
+  }
+}
+
+function pintar() { pintarTira(); pintarDia(); pintarRecordatorios(); }
+
+function pintarTira() {
+  const fechas = []; for (let f = U.hoyIso(); f <= HASTA(); f = U.sumarDias(f, 1)) fechas.push(f);
+  $("tira").replaceChildren(...fechas.map(f => {
+    const d = U.fechaDe(f), n = confirmadosDe(f).length, abierto = Turnos.abiertoDia(f, diasMap);
+    return el("button", { type: "button", class: "dia" + (f === dia ? " on" : "") + (abierto ? "" : " cerrado"), "aria-pressed": String(f === dia),
+      "aria-label": U.fechaLarga(f) + ", " + n + " turnos" + (abierto ? "" : ", cerrado"),
+      onclick: () => { dia = f; confirmando = null; pregunta = null; form = null; bConf = null; pintar(); } },
+      el("small", { text: f === U.hoyIso() ? "Hoy" : DIAS3[d.getDay()] }), el("b", { text: String(d.getDate()) }),
+      el("span", { class: "n", text: abierto ? (n ? n + " t" : "·") : "cerr." }));
+  }));
+  const on = $("tira").querySelector(".on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
+}
+
+function pintarDia() {
+  const tramos = Turnos.tramosDe(dia), abierto = Turnos.abiertoDia(dia, diasMap), conf = confirmadosDe(dia);
+  $("dTitulo").textContent = (dia === U.hoyIso() ? "Hoy, " : "") + U.fechaLarga(dia);
+  $("dCant").textContent = conf.length;
+  $("dSwitch").checked = abierto;
+  const dow = dowDe(dia), ov = diasMap[dia], sem = cerradoSemana(dow);
+  // Si el día de la semana está cerrado para siempre, se abre desde "Horario comercial", no acá
+  $("dSwitch").disabled = !tramos.length || (sem && !ov);
+  $("dSwitchTxt").textContent = sem && !ov ? "Cerrado " + todosLos(dow) + ". Se cambia en Horario."
+    : !tramos.length ? "Cerrado por horario"
+    : abierto ? (sem && ov ? "Abierto solo este día: " + todosLos(dow) + " están cerrados" : "Los clientes pueden reservar este día")
+    : "Nadie puede reservar este día";
+  pintarPregunta();
+  pintarCerrados();
+  $("dCancelarDia").hidden = !conf.length;
+  $("accDia").hidden = !tramos.length || !!form;
+  $("fTurno").hidden = form !== "turno"; $("fBloq").hidden = form !== "bloqueo";
+
+  // Filtro por estilista
+  $("filtros").hidden = N.equipo.length < 2;
+  $("filtros").replaceChildren(...[{ id: "", nombre: "Todos" }, ...N.equipo].map(p =>
+    el("button", { type: "button", class: "filtro" + (filtro === p.id ? " on" : ""), "aria-pressed": String(filtro === p.id), text: p.nombre, onclick: () => { filtro = p.id; pintarDia(); } })));
+
+  // Agenda: una fila cada 30 min con los turnos que empiezan en ese rato
+  const lista = [...conf.filter(t => !filtro || t.estilista === filtro), ...agruparBloqueos(bloqueosDe(dia).filter(t => !filtro || t.estilista === filtro))]
+    .sort((a, b) => a.hora.localeCompare(b.hora));
+  const filas = [], usados = new Set();
+  for (const [a, b] of tramos) for (let m = U.aMin(a); m < U.aMin(b); m += 30) {
+    const aqui = lista.filter(t => { const x = U.aMin(t.hora); return x >= m && x < m + 30; });
+    aqui.forEach(t => usados.add(t.id));
+    filas.push(el("div", { class: "slot" + (aqui.length ? "" : " libre") }, el("time", { text: U.aHora(m) }),
+      aqui.length ? el("div", {}, ...aqui.map(tarjetaAgenda))
+        : el("span", { class: "vacio", text: lista.some(g => g.tipo === "bloqueo" && U.aMin(g.hora) < m && m < U.aMin(g.hora) + g.minutos) ? "Bloqueado" : "Libre" })));
+  }
+  // Turnos fuera del horario (por si cambió el horario después de reservar)
+  lista.filter(t => !usados.has(t.id)).forEach(t => filas.push(el("div", { class: "slot" }, el("time", { text: t.hora }), el("div", {}, tarjetaAgenda(t)))));
+  $("agenda").replaceChildren(...(filas.length ? filas : [el("div", { class: "slot libre" }, el("span"), el("span", { class: "vacio", text: "Cerrado por horario." }))]));
+
+  // Cancelados de hoy en adelante, agrupados por fecha, para avisar
+  const canc = turnos.filter(t => t.estado === "cancelado" && t.fecha >= U.hoyIso() && (!filtro || t.estilista === filtro))
+    .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+  const filasC = []; let ult = "";
+  canc.forEach(t => {
+    if (t.fecha !== ult) { ult = t.fecha; filasC.push(el("div", { class: "fecha-cab", text: mayus(U.fechaCorta(t.fecha)) })); }
+    filasC.push(el("div", { class: "slot" }, el("time", { text: t.hora }), el("div", {}, tarjetaCancelada(t))));
+  });
+  $("cancelados").hidden = !canc.length;
+  $("cancList").replaceChildren(...filasC);
+}
+
+/* ---------- Cuadro "¿Solo ese día o siempre?" ---------- */
+function preguntar(p) { pregunta = p; confirmando = null; pintarDia(); $("dPregunta").scrollIntoView({ block: "center", behavior: "smooth" }); }
+function cerrarPregunta() { pregunta = null; pintarDia(); }
+const boton = (texto, clase, fn) => el("button", { class: "btn " + clase, type: "button", text: texto, onclick: fn });
+
+function pintarPregunta() {
+  const p = pregunta, box = $("dPregunta");
+  box.hidden = !p;
+  if (!p) return;
+  const d = p.dow, sub = $("dPreguntaSub"), acc = [];
+  sub.hidden = true;
+  const solo = p.ref ? "el " + U.fechaCorta(p.ref) : "";
+  if (p.paso === "alcance") {
+    if (p.tipo === "cerrar") {
+      $("dPreguntaTxt").textContent = "¿Solo ese día o siempre?";
+      sub.textContent = "Cerrar las reservas solo " + solo + ", o " + todosLos(d) + "."; sub.hidden = false;
+      acc.push(boton("Solo " + solo, "pri", () => elegirCierre("dia", p)), boton(mayus(todosLos(d)), "sec", () => elegirCierre("semana", p)));
+    } else if (p.tipo === "cancelar") {
+      const a = confirmadosDe(p.ref).length, b = turnosDeSemana(d).length;
+      $("dPreguntaTxt").textContent = "¿Solo este día o siempre?";
+      sub.textContent = "Se cancelan los turnos y después les avisás por WhatsApp. Esto no cierra las reservas: para eso usá el interruptor."; sub.hidden = false;
+      acc.push(boton("Solo " + solo + " (" + nTurnos(a) + ")", "peligro", () => { pregunta = null; cancelar(confirmadosDe(p.ref)); }));
+      if (b > a) acc.push(boton(mayus(todosLos(d)) + " (" + nTurnos(b) + ")", "peligro", () => { pregunta = null; cancelar(turnosDeSemana(d)); }));
+    }
+  } else {   // paso "turnos": hay turnos confirmados que se verían afectados
+    const lista = listaDe(p.alcance, p);
+    $("dPreguntaTxt").textContent = "Hay " + nTurnos(lista.length) + (p.alcance === "dia" ? " ese día" : " en " + todosLos(d)) + ". ¿Qué hacemos?";
+    if (p.alcance === "semana") { sub.textContent = resumenTurnos(lista); sub.hidden = false; }
+    acc.push(boton("Cerrar y cancelar todos", "peligro", () => aplicarCierre(p.alcance, p, true)),
+      boton("Solo cerrar reservas nuevas", "sec", () => aplicarCierre(p.alcance, p, false)));
+  }
+  acc.push(boton("Volver", "sec", cerrarPregunta));
+  $("dPreguntaAcc").replaceChildren(...acc);
+}
+
+function elegirCierre(alcance, p) {
+  if (listaDe(alcance, p).length) preguntar({ ...p, paso: "turnos", alcance });
+  else aplicarCierre(alcance, p, false);
+}
+async function aplicarCierre(alcance, p, cancelarTurnos) {
+  const lista = cancelarTurnos ? listaDe(alcance, p) : [];
+  pregunta = null;
+  try {
+    if (alcance === "dia") await T.setDia(p.ref, false);
+    else {
+      // "Siempre" = lo mismo que apagar ese día en Horario comercial: tramos [] + semana-N cerrado.
+      // Se limpian los datos puntuales de ese día de la semana para que no queden jueves abiertos por error.
+      for (const f of fechasConDato(p.dow)) await T.borrarDia(f);
+      const semana = {}, cerrados = [p.dow];
+      for (let d = 0; d < 7; d++) {
+        semana[d] = d === p.dow ? [] : Turnos.tramosDeDow(d).map(x => [x[0], x[1]]);
+        if (d !== p.dow && cerradoSemana(d)) cerrados.push(d);
+      }
+      await T.guardarHorario(semana, cerrados);
+    }
+    for (const t of lista) await T.cancelar(t);
+  } catch (e) { toast("No se pudo cerrar el día. Revisá la conexión."); }
+  await recargar();
+  if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
+}
+async function borrar(id) {
+  try { await T.borrarDia(id); } catch (e) { toast("No se pudo reabrir. Revisá la conexión."); }
+  await recargar();
+}
+
+/* ---------- Días cerrados ---------- */
+function pintarCerrados() {
+  const puntuales = Object.keys(diasMap).filter(k => esFecha(k) && k >= U.hoyIso() && Turnos.tramosDe(k).length &&
+    (diasMap[k].abierto === false ? !cerradoSemana(dowDe(k)) : cerradoSemana(dowDe(k)))).sort();
+  const item = (titulo, nota, texto, fn) => el("div", { class: "item-c" }, el("div", {}, el("b", { text: titulo }), nota ? el("small", { text: nota }) : null), boton(texto, "sec", fn));
+  const filas = puntuales.map(f => diasMap[f].abierto === false
+    ? item(mayus(U.fechaCorta(f)), "Cerrado solo ese día", "Reabrir", () => borrar(f))
+    : item(mayus(U.fechaCorta(f)), "Abierto solo ese día", "Volver a cerrar", () => borrar(f)));
+  $("cerrSum").textContent = "Días cerrados" + (puntuales.length ? " (" + puntuales.length + ")" : "");
+  $("cerrLista").replaceChildren(...(filas.length ? filas : [el("p", { class: "aviso", text: "No hay fechas cerradas a futuro." })]));
+  // Los días que no se atienden nunca se manejan en Horario comercial
+  const sin = ORDEN.filter(d => cerradoSemana(d) || !Turnos.tramosDeDow(d).length);
+  $("cerrFijos").textContent = sin.length ? "No atendés los días: " + sin.map(d => U.DIAS[d].toLowerCase()).join(", ") + "." : "Atendés todos los días de la semana.";
+}
+
+const linkCliente = (t, texto) => U.wa(t.ejemplo ? "" : t.celular, texto);
+const celVisible = (t) => t.celular ? (t.celular.startsWith("598") ? "0" + t.celular.slice(3) : "+" + t.celular) : t.ejemplo ? "turno de ejemplo" : "sin celular";
+// ¿Se le puede escribir por WhatsApp? Los turnos de ejemplo del demo abren wa.me sin número; los cargados a mano sin celular no.
+const sePuedeEscribir = (t) => !!t.celular || !!t.ejemplo;
+
+function tarjetaAgenda(t) { return t.tipo === "bloqueo" ? tarjetaBloqueo(t) : tarjeta(t); }
+function tarjeta(t) {
+  const p = U.estilista(t.estilista);
+  const acc = confirmando === t.id
+    ? el("div", { class: "acc" }, el("span", { class: "det", text: "¿Cancelar este turno?" }),
+        el("button", { class: "btn peligro", type: "button", text: "Sí, cancelar", onclick: () => cancelar([t]) }),
+        el("button", { class: "btn sec", type: "button", text: "No", onclick: () => { confirmando = null; pintarDia(); } }))
+    : el("div", { class: "acc" },
+        sePuedeEscribir(t) ? el("a", { class: "btn sec", href: linkCliente(t, "Hola " + t.nombre + ", te escribo de " + N.nombre + "."), target: "_blank", rel: "noopener", text: "WhatsApp" }) : null,
+        el("button", { class: "btn sec", type: "button", text: "Cancelar", onclick: () => { confirmando = t.id; pintarDia(); } }));
+  return el("div", { class: "turno" },
+    el("div", { class: "nom" }, el("b", { text: t.nombre }), t.origen === "panel" ? el("span", { class: "marca", text: "cargado a mano" }) : null),
+    el("span", { class: "det", text: [t.hora + " · " + t.servicio + " (" + t.minutos + " min)", N.equipo.length > 1 ? p.nombre : null, celVisible(t)].filter(Boolean).join(" · ") }),
+    acc);
+}
+function tarjetaCancelada(t) {
+  const p = U.estilista(t.estilista);
+  const cliente = t.canceladoPor === "cliente";
+  return el("div", { class: "turno" },
+    el("b", { text: t.nombre }),
+    el("span", { class: "det", text: [t.servicio, N.equipo.length > 1 ? p.nombre : null, celVisible(t)].filter(Boolean).join(" · ") }),
+    cliente ? el("div", { class: "acc" }, el("span", { class: "ok-txt", text: "Canceló el cliente · no hace falta avisar" }))
+    : !sePuedeEscribir(t) ? el("div", { class: "acc" }, el("span", { class: "det", text: "Sin celular: no se le puede avisar por WhatsApp." }))
+    : el("div", { class: "acc" },
+      el("a", { class: "btn " + (t.avisado ? "sec" : "pri"), href: linkCliente(t, Turnos.mensajeCancelacion(t)), target: "_blank", rel: "noopener",
+        text: t.avisado ? "Avisar de nuevo" : "Avisar por WhatsApp", onclick: () => avisado(t) }),
+      t.avisado ? el("span", { class: "ok-txt", text: "✓ Avisado" }) : null));
+}
+
+/* ---------- Bloqueos de horario ---------- */
+// Un bloqueo para "todos" son varios documentos (uno por estilista): en la agenda se muestran juntos.
+function agruparBloqueos(lista) {
+  const por = {};
+  lista.forEach(t => { const k = t.hora + "|" + t.minutos + "|" + (t.motivo || ""); (por[k] = por[k] || { tipo: "bloqueo", id: "g" + t.id, fecha: t.fecha, hora: t.hora, minutos: t.minutos, motivo: t.motivo || "", items: [] }).items.push(t); });
+  return Object.values(por);
+}
+function tarjetaBloqueo(g) {
+  const fin = U.aHora(U.aMin(g.hora) + g.minutos);
+  const quien = N.equipo.length > 1 ? (g.items.length >= N.equipo.length ? "Todos" : g.items.map(i => U.estilista(i.estilista).nombre).join(" y ")) : null;
+  return el("div", { class: "turno bloqueo" },
+    el("b", { text: "Bloqueado" + (g.motivo ? " · " + g.motivo : "") }),
+    el("span", { class: "det", text: [g.hora + " a " + fin, quien].filter(Boolean).join(" · ") }),
+    el("div", { class: "acc" }, el("button", { class: "btn sec", type: "button", text: "Quitar bloqueo", onclick: () => quitarBloqueo(g) })));
+}
+async function quitarBloqueo(g) {
+  try { for (const b of g.items) await T.quitarBloqueo(b); toast("Bloqueo quitado: ese horario vuelve a estar libre."); }
+  catch (e) { toast("No se pudo quitar el bloqueo. Revisá la conexión."); }
+  await recargar();
+}
+
+/* ---------- Recordatorios ---------- */
+function pintarRecordatorios() {
+  const hoy = U.hoyIso(), man = U.sumarDias(hoy, 1), d = new Date(), ahora = d.getHours() * 60 + d.getMinutes();
+  const lista = turnos.filter(t => t.estado === "confirmado" && !esBloqueo(t) && (t.fecha === man || (t.fecha === hoy && U.aMin(t.hora) > ahora)))
+    .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+  const box = $("recs"); box.hidden = !lista.length;
+  if (!lista.length) return;
+  const kids = [el("summary", { text: "Recordatorios (" + lista.length + ")", onclick: () => { recsAbierto = !box.open; } }), el("p", { class: "aviso", text: "Mandales un WhatsApp para que no se olviden o cancelen a tiempo." })];
+  let ult = "";
+  lista.forEach(t => {
+    if (t.fecha !== ult) { ult = t.fecha; kids.push(el("div", { class: "rec-cab", text: t.fecha === hoy ? "Hoy, más tarde" : "Mañana · " + U.fechaCorta(t.fecha) })); }
+    const p = U.estilista(t.estilista);
+    const der = !sePuedeEscribir(t) ? el("span", { class: "det", text: "sin celular" })
+      : el("div", { class: "der" },
+          el("a", { class: "btn " + (t.recordado ? "sec" : "pri"), href: linkCliente(t, Turnos.mensajeRecordatorio(t)), target: "_blank", rel: "noopener",
+            text: t.recordado ? "Recordar de nuevo" : "Recordar por WhatsApp", onclick: () => recordado(t) }),
+          t.recordado ? el("span", { class: "ok-txt", text: "✓ Recordado" }) : null);
+    kids.push(el("div", { class: "rec" },
+      el("div", {}, el("b", { text: t.hora + " · " + t.nombre }), el("small", { text: [t.servicio, N.equipo.length > 1 ? p.nombre : null].filter(Boolean).join(" · ") })), der));
+  });
+  box.replaceChildren(...kids); box.open = recsAbierto;
+}
+async function recordado(t) { if (t.recordado) return; try { await T.marcarRecordado(t.id); t.recordado = true; setTimeout(pintarRecordatorios, 300); } catch (e) {} }
+
+async function avisado(t) { if (t.avisado) return; try { await T.marcarAvisado(t.id); t.avisado = true; setTimeout(pintarDia, 300); } catch (e) {} }
+async function cancelar(lista) {
+  confirmando = null;
+  try { for (const t of lista) await T.cancelar(t); } catch (e) { toast("No se pudo cancelar. Revisá la conexión."); }
+  await recargar();
+  if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
+}
+/* ---------- Agregar turno a mano ---------- */
+const errorForm = (id, m) => { $(id).textContent = m; $(id).hidden = !m; };
+const cabeEnDia = (f, hora, minutos) => { const a = U.aMin(hora); return Turnos.tramosDe(f).some(([x, y]) => a >= U.aMin(x) && a + minutos <= U.aMin(y)); };
+const solapan = (h1, m1, h2, m2) => U.aMin(h1) < U.aMin(h2) + m2 && U.aMin(h2) < U.aMin(h1) + m1;
+let aOc = new Set();
+
+async function abrirTurno() {
+  form = "turno"; confirmando = null; pregunta = null; bConf = null;
+  $("aServ").replaceChildren(...N.servicios.map((s, i) => el("option", { value: String(i), text: s.nombre + " · " + s.minutos + " min" })));
+  $("aEst").replaceChildren(el("option", { value: "", text: "Cualquiera libre" }), ...N.equipo.map(p => el("option", { value: p.id, text: p.nombre })));
+  $("aEstLabel").hidden = N.equipo.length < 2;
+  $("aNombre").value = ""; $("aCel").value = ""; $("aOtra").value = ""; errorForm("aError", "");
+  pintarDia(); $("fTurno").scrollIntoView({ block: "start", behavior: "smooth" });
+  await refrescarHoras();
+}
+async function refrescarHoras() {
+  try { aOc = await T.ocupados(dia); errorForm("aError", ""); }
+  catch (e) { aOc = new Set(); errorForm("aError", "No se pudo ver qué horarios están libres. Revisá la conexión."); }
+  const s = N.servicios[$("aServ").value], est = $("aEst").value, previo = $("aHora").value;
+  const libres = Turnos.horariosLibres(dia, s.minutos, est, aOc);
+  const ops = libres.map(x => el("option", { value: x.hora + "|" + x.estilista, text: x.hora + (!est && N.equipo.length > 1 ? " · " + U.estilista(x.estilista).nombre : "") }));
+  ops.push(el("option", { value: "otra", text: libres.length ? "Otra hora (aunque quede justa)…" : "No hay horarios libres: elegir otra hora…" }));
+  $("aHora").replaceChildren(...ops);
+  if ([...$("aHora").options].some(o => o.value === previo)) $("aHora").value = previo;
+  $("aOtraLabel").hidden = $("aHora").value !== "otra";
+}
+async function guardarTurno(e) {
+  e.preventDefault(); errorForm("aError", "");
+  const s = N.servicios[$("aServ").value], nombre = $("aNombre").value.trim(), cel = $("aCel").value.trim(), v = $("aHora").value;
+  if (!nombre) return errorForm("aError", "Escribí el nombre del cliente.");
+  if (cel && !U.celValido(cel)) return errorForm("aError", "Revisá el celular (ej: 099 123 456) o dejalo vacío.");
+  let hora, est = $("aEst").value;
+  if (v === "otra") {
+    hora = $("aOtra").value;
+    if (!hora) return errorForm("aError", "Elegí la hora.");
+    if (U.aMin(hora) % 15) return errorForm("aError", "Los minutos tienen que ser 00, 15, 30 o 45.");
+    if (!cabeEnDia(dia, hora, s.minutos)) return errorForm("aError", "A esa hora el servicio (" + s.minutos + " min) no entra en el horario de atención de ese día.");
+  } else [hora, est] = v.split("|");
+  $("aOk").disabled = true; $("aOk").textContent = "Guardando…";
+  try {
+    try { aOc = await T.ocupados(dia); } catch (x) { throw new Error("red"); }
+    if (!est) est = N.equipo.map(p => p.id).find(id => Turnos.idsBloques(dia, id, hora, s.minutos).every(b => !aOc.has(b)));
+    const bloques = est ? Turnos.idsBloques(dia, est, hora, s.minutos) : [];
+    if (!est || bloques.some(b => aOc.has(b))) throw new Error("ocupado");
+    await T.crearTurnoPanel({ fecha: dia, hora, minutos: s.minutos, servicio: s.nombre, estilista: est, nombre, celular: cel ? U.normalizarCel(cel) : "", estado: "confirmado", bloques });
+    form = null; await recargar(); toast("Turno guardado: " + nombre + ", " + hora + ".");
+  } catch (x) {
+    if (x.message === "ocupado") { errorForm("aError", "Ese horario ya está ocupado o bloqueado. Elegí otro."); await refrescarHoras(); errorForm("aError", "Ese horario ya está ocupado o bloqueado. Elegí otro."); }
+    else errorForm("aError", "No se pudo guardar. Revisá la conexión y probá de nuevo.");
+  } finally { $("aOk").disabled = false; $("aOk").textContent = "Guardar turno"; }
+}
+$("bAgregar").addEventListener("click", abrirTurno);
+$("aServ").addEventListener("change", refrescarHoras);
+$("aEst").addEventListener("change", refrescarHoras);
+$("aHora").addEventListener("change", () => { $("aOtraLabel").hidden = $("aHora").value !== "otra"; });
+$("fTurno").addEventListener("submit", guardarTurno);
+$("aCancelar").addEventListener("click", () => { form = null; pintarDia(); });
+
+/* ---------- Bloquear horas sueltas ---------- */
+let bConf = null;   // { p, lista }: bloqueo que pisa turnos confirmados y espera la respuesta del peluquero
+function abrirBloqueo() {
+  form = "bloqueo"; confirmando = null; pregunta = null; bConf = null;
+  const tr = Turnos.tramosDe(dia), a = tr.length ? U.aMin(tr[0][0]) : 12 * 60;
+  $("bDesde").value = U.aHora(a); $("bHasta").value = U.aHora(a + 60); $("bMotivo").value = ""; errorForm("bError", "");
+  $("bQuien").replaceChildren(el("option", { value: "", text: "Todos" }), ...N.equipo.map(p => el("option", { value: p.id, text: p.nombre })));
+  $("bQuienLabel").hidden = N.equipo.length < 2;
+  pintarBConf(); pintarDia(); $("fBloq").scrollIntoView({ block: "start", behavior: "smooth" });
+}
+function leerBloqueo() {
+  const desde = $("bDesde").value, hasta = $("bHasta").value, quien = $("bQuien").value;
+  if (!desde || !hasta) return errorForm("bError", "Completá el desde y el hasta.");
+  if (U.aMin(desde) % 15 || U.aMin(hasta) % 15) return errorForm("bError", "Los minutos tienen que ser 00, 15, 30 o 45.");
+  if (U.aMin(desde) >= U.aMin(hasta)) return errorForm("bError", "El desde tiene que ser antes que el hasta.");
+  return { fecha: dia, hora: desde, minutos: U.aMin(hasta) - U.aMin(desde), estilistas: quien ? [quien] : N.equipo.map(p => p.id), motivo: $("bMotivo").value.trim() };
+}
+function pintarBConf() {
+  const box = $("bPregunta"); box.hidden = !bConf; $("bAcc").hidden = !!bConf;
+  ["bDesde", "bHasta", "bQuien", "bMotivo"].forEach(id => { $(id).disabled = !!bConf; });
+  if (!bConf) return;
+  const n = bConf.lista.length;
+  $("bPreguntaTxt").textContent = (n === 1 ? "Hay 1 turno confirmado" : "Hay " + n + " turnos confirmados") + " en ese horario.";
+  $("bPreguntaSub").textContent = bConf.lista.map(t => t.hora + " " + t.nombre).join(", ") + ". ¿Los cancelamos para bloquear?";
+  $("bPreguntaAcc").replaceChildren(
+    boton("Cancelar esos turnos y bloquear", "peligro", () => ejecutarBloqueo(true)),
+    boton("No bloquear", "sec", () => { bConf = null; pintarBConf(); }));
+}
+function intentarBloquear() {
+  errorForm("bError", "");
+  const p = leerBloqueo(); if (!p) return;
+  const pisa = (t) => p.estilistas.includes(t.estilista) && solapan(p.hora, p.minutos, t.hora, t.minutos);
+  const yaBloq = bloqueosDe(dia).filter(pisa);
+  if (yaBloq.length) return errorForm("bError", "Ya hay un bloqueo (" + yaBloq[0].hora + " a " + U.aHora(U.aMin(yaBloq[0].hora) + yaBloq[0].minutos) + ") que se pisa con ese rato. Quitalo primero.");
+  const lista = confirmadosDe(dia).filter(pisa).sort((a, b) => a.hora.localeCompare(b.hora));
+  if (lista.length) { bConf = { p, lista }; pintarBConf(); $("bPregunta").scrollIntoView({ block: "center" }); return; }
+  bConf = { p, lista: [] }; ejecutarBloqueo(false);
+}
+async function ejecutarBloqueo(cancelarTurnos) {
+  const { p, lista } = bConf, cancelados = cancelarTurnos ? lista : [];
+  $("bOk").disabled = true;
+  try {
+    for (const t of cancelados) await T.cancelar(t);
+    await T.bloquear(p);
+    bConf = null; form = null;
+    await recargar();
+    toast(cancelados.length ? "Horario bloqueado. Cancelaste " + nTurnos(cancelados.length) + ": avisales abajo." : "Horario bloqueado: nadie puede reservar esas horas.");
+    if (cancelados.length) $("cancelados").scrollIntoView({ block: "start" });
+  } catch (e) {
+    bConf = null; pintarBConf();
+    errorForm("bError", e.message === "ocupado" ? "Parte de ese horario ya está ocupado. Revisá la agenda y probá de nuevo." : "No se pudo bloquear. Revisá la conexión y probá de nuevo.");
+    await recargar();
+  } finally { $("bOk").disabled = false; }
+}
+$("bBloquear").addEventListener("click", abrirBloqueo);
+$("bOk").addEventListener("click", intentarBloquear);
+$("bCancelar").addEventListener("click", () => { form = null; bConf = null; pintarDia(); });
+
+/* ---------- Pantalla "Horario comercial" ---------- */
+// hDraft[d] = { on, tramos: [["09:00","12:30"], …] } (borrador; recién se guarda con el botón Guardar)
+let hDraft = null, hExp = null, hErr = {}, hConf = null, hGuardando = false, hRefs = {};
+const MAX_TRAMOS = 3;
+const copiaTramos = (tr) => tr.map(x => [x[0], x[1]]);
+const porDefecto = (d) => (N.horarios && (N.horarios[d] || []).length) ? copiaTramos(N.horarios[d]) : [["09:00", "18:00"]];
+const resumenDia = (x) => x.on ? x.tramos.map(([a, b]) => (a || "--:--") + " a " + (b || "--:--")).join(" y ") || "Sin horario" : "Cerrado";
+
+function abrirHorario() {
+  hDraft = {};
+  for (let d = 0; d < 7; d++) {
+    const tr = copiaTramos(Turnos.tramosDeDow(d));
+    hDraft[d] = { on: tr.length > 0 && !cerradoSemana(d), tramos: tr.length ? tr : porDefecto(d) };
+  }
+  hExp = null; hErr = {}; hConf = null; hGuardando = false; enHorario = true;
+  $("hError").hidden = true; pregunta = null; confirmando = null;
+  $("vPanel").hidden = true; $("vHorario").hidden = false; document.body.classList.add("en-horario");
+  pintarHorario(); window.scrollTo(0, 0);
+}
+function cerrarHorario() {
+  enHorario = false; hDraft = null; hConf = null;
+  $("vHorario").hidden = true; $("vPanel").hidden = false; document.body.classList.remove("en-horario");
+  window.scrollTo(0, 0);
+}
+
+// Devuelve el texto del error de un día (o "" si está bien)
+function validarTramos(tr) {
+  if (!tr.length) return "Agregá al menos un horario, o apagá el día.";
+  for (let i = 0; i < tr.length; i++) {
+    const [a, b] = tr[i], n = tr.length > 1 ? " del horario " + (i + 1) : "";
+    if (!a || !b) return "Completá el desde y el hasta" + n + ".";
+    if (U.aMin(a) % 15 || U.aMin(b) % 15) return "Los minutos tienen que ser 00, 15, 30 o 45" + n + ".";
+    if (U.aMin(a) >= U.aMin(b)) return "El desde tiene que ser antes que el hasta" + n + ".";
+  }
+  for (let i = 1; i < tr.length; i++)
+    if (U.aMin(tr[i][0]) < U.aMin(tr[i - 1][1])) return "Los horarios tienen que ir en orden y sin pisarse: el " + (i + 1) + " empieza antes de que termine el " + i + ".";
+  return "";
+}
+function nuevoTramo(tr) {
+  if (!tr.length) return ["09:00", "18:00"];
+  const ult = tr[tr.length - 1][1], d = Math.min((ult ? U.aMin(ult) : 12 * 60) + 60, 22 * 60);
+  return [U.aHora(d), U.aHora(Math.min(d + 180, 23 * 60 + 45))];
+}
+
+function filaHorario(d) {
+  const x = hDraft[d], nombre = U.DIAS[d], abierta = hExp === d && x.on;
+  const resumen = el("small", { text: resumenDia(x) });
+  const error = el("p", { class: "error", role: "alert", text: hErr[d] || "", hidden: !hErr[d] });
+  hRefs[d] = { resumen, error };
+  const sw = el("input", { type: "checkbox", role: "switch", id: "hsw" + d, "aria-label": nombre + ": abierto" });
+  sw.checked = x.on;
+  sw.addEventListener("change", () => {
+    x.on = sw.checked; hConf = null; delete hErr[d];
+    if (x.on) { if (!x.tramos.length) x.tramos = porDefecto(d); hExp = d; } else if (hExp === d) hExp = null;
+    pintarHorario();
+    const p = $("hsw" + d); if (p) p.focus();
+  });
+  const info = el("button", { type: "button", class: "hinfo" + (x.on ? "" : " cerrada"), "aria-expanded": x.on ? String(abierta) : null, "aria-controls": x.on ? "hed" + d : null,
+    onclick: () => { if (!x.on) return; hExp = hExp === d ? null : d; pintarHorario(); } }, el("b", { text: nombre }), resumen);
+  return el("li", { class: "hfila", id: "hfila" + d },
+    el("div", { class: "hfila-cab" }, info, el("label", { class: "switch" }, sw)),
+    error, abierta ? editorHorario(d) : null);
+}
+
+function editorHorario(d) {
+  const x = hDraft[d], nombre = U.DIAS[d];
+  const cambio = () => { hConf = null; pintarConfHorario(); hErr[d] = validarTramos(x.tramos); refrescarFila(d); };
+  const filas = x.tramos.map((t, i) => {
+    const pref = nombre + ", horario " + (i + 1) + ", ";
+    const campo = (txt, k) => el("label", {}, txt, el("input", { type: "time", step: "900", value: t[k] || null, required: true, "aria-label": pref + txt.toLowerCase(),
+      onchange: (e) => { t[k] = e.target.value; cambio(); } }));
+    return el("div", { class: "htramo" }, campo("Desde", 0), campo("Hasta", 1),
+      el("button", { class: "quitar", type: "button", text: "✕", disabled: x.tramos.length < 2, "aria-label": "Quitar " + pref.replace(/, $/, ""),
+        onclick: () => { x.tramos.splice(i, 1); hConf = null; hErr[d] = validarTramos(x.tramos); pintarHorario(); } }));
+  });
+  const otros = ORDEN.filter(o => o !== d && hDraft[o].on);
+  const agregar = el("button", { class: "btn sec", type: "button", text: "+ Agregar horario", disabled: x.tramos.length >= MAX_TRAMOS,
+    onclick: () => { x.tramos.push(nuevoTramo(x.tramos)); cambio(); pintarHorario(); } });
+  const copiar = el("button", { class: "btn sec", type: "button", text: "Copiar a los demás días abiertos", disabled: !otros.length,
+    onclick: () => {
+      const err = validarTramos(x.tramos);
+      if (err) { hErr[d] = err; return pintarHorario(); }
+      otros.forEach(o => { hDraft[o].tramos = copiaTramos(x.tramos); delete hErr[o]; });
+      hConf = null; pintarHorario(); toast("Horario copiado a " + otros.length + (otros.length === 1 ? " día." : " días."));
+    } });
+  return el("div", { class: "heditor", id: "hed" + d }, ...filas,
+    el("div", { class: "acc2" }, agregar, copiar),
+    x.tramos.length >= MAX_TRAMOS ? el("p", { class: "aviso", text: "Máximo " + MAX_TRAMOS + " horarios por día." }) : null);
+}
+// Actualiza solo el resumen y el error de una fila (así no se pierde el foco al escribir la hora)
+function refrescarFila(d) {
+  const r = hRefs[d]; if (!r) return;
+  r.resumen.textContent = resumenDia(hDraft[d]);
+  r.error.textContent = hErr[d] || ""; r.error.hidden = !hErr[d];
+}
+function pintarHorario() {
+  hRefs = {};
+  $("hLista").replaceChildren(...ORDEN.map(filaHorario));
+  pintarConfHorario();
+}
+
+// Turnos confirmados de hoy en adelante que entraban en el horario de antes y no entran en el nuevo
+const cabeEn = (t, tramos) => { const a = U.aMin(t.hora), b = a + t.minutos; return tramos.some(([x, y]) => a >= U.aMin(x) && b <= U.aMin(y)); };
+function conflictosHorario(nuevo) {
+  const hoy = U.hoyIso(), ahora = new Date().getHours() * 60 + new Date().getMinutes();
+  return turnos.filter(t => t.estado === "confirmado" && !esBloqueo(t) && t.fecha >= hoy && !(t.fecha === hoy && U.aMin(t.hora) + t.minutos <= ahora))
+    .filter(t => {
+      const d = dowDe(t.fecha), viejo = cerradoSemana(d) ? [] : Turnos.tramosDeDow(d);
+      return cabeEn(t, viejo) && !cabeEn(t, nuevo[d]);
+    }).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+}
+function pintarConfHorario() {
+  const box = $("hPregunta"); box.hidden = !hConf;
+  if (!hConf) return;
+  const n = hConf.lista.length;
+  $("hPreguntaTxt").textContent = (n === 1 ? "Hay 1 turno confirmado" : "Hay " + n + " turnos confirmados") + " que queda" + (n === 1 ? "" : "n") + " fuera del nuevo horario.";
+  $("hPreguntaSub").textContent = resumenTurnos(hConf.lista) + ". ¿Los cancelamos?";
+  $("hPreguntaAcc").replaceChildren(
+    boton("Guardar y cancelar esos turnos", "peligro", () => guardarHorario(true)),
+    boton("Guardar y mantenerlos", "sec", () => guardarHorario(false)),
+    boton("Volver", "sec", () => { hConf = null; pintarConfHorario(); }));
+}
+
+function intentarGuardar() {
+  if (hGuardando) return;
+  hConf = null; $("hError").hidden = true;
+  let primero = null;
+  for (const d of ORDEN) { hErr[d] = hDraft[d].on ? validarTramos(hDraft[d].tramos) : ""; if (hErr[d] && primero === null) primero = d; }
+  if (primero !== null) {
+    hExp = primero; pintarHorario();
+    $("hfila" + primero).scrollIntoView({ block: "center" });
+    return;
+  }
+  const nuevo = {}; for (let d = 0; d < 7; d++) nuevo[d] = hDraft[d].on ? hDraft[d].tramos : [];
+  const lista = conflictosHorario(nuevo);
+  if (lista.length) { hConf = { lista }; pintarConfHorario(); $("hPregunta").scrollIntoView({ block: "center" }); return; }
+  guardarHorario(false);
+}
+async function guardarHorario(cancelarTurnos) {
+  if (hGuardando) return;
+  const semana = {}, cerrados = [];
+  for (let d = 0; d < 7; d++) { semana[d] = hDraft[d].on ? copiaTramos(hDraft[d].tramos) : []; if (!hDraft[d].on) cerrados.push(d); }
+  const lista = cancelarTurnos && hConf ? hConf.lista : [];
+  hGuardando = true; $("hGuardar").disabled = true; $("hCancelar").disabled = true; $("hGuardar").textContent = "Guardando…";
+  try {
+    // Un día apagado es un cierre para siempre: se limpian las fechas sueltas de ese día de la semana
+    for (const d of cerrados) for (const f of fechasConDato(d)) await T.borrarDia(f);
+    await T.guardarHorario(semana, cerrados);
+    for (const t of lista) await T.cancelar(t);
+  } catch (e) {
+    hGuardando = false; $("hGuardar").disabled = false; $("hCancelar").disabled = false; $("hGuardar").textContent = "Guardar";
+    $("hError").textContent = "No se pudo guardar. Revisá la conexión y probá de nuevo."; $("hError").hidden = false;
+    return;
+  }
+  hGuardando = false; $("hGuardar").disabled = false; $("hCancelar").disabled = false; $("hGuardar").textContent = "Guardar";
+  cerrarHorario();
+  await recargar();
+  toast("Horario guardado" + (lista.length ? ". Cancelaste " + nTurnos(lista.length) + ": avisales abajo." : "."));
+  if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
+}
+$("hGuardar").addEventListener("click", intentarGuardar);
+$("hCancelar").addEventListener("click", cerrarHorario);
+$("hAtras").addEventListener("click", cerrarHorario);
+
+$("dSwitch").addEventListener("change", () => {
+  const quiere = $("dSwitch").checked, dow = dowDe(dia);
+  $("dSwitch").checked = !quiere;   // el interruptor se mueve recién cuando se aplica el cambio
+  pregunta = null;
+  if (!quiere && !cerradoSemana(dow)) return preguntar({ tipo: "cerrar", paso: "alcance", ref: dia, dow });
+  borrar(dia);   // estaba cerrado solo ese día (o abierto solo ese día): se borra el dato y vuelve a la normalidad
+});
+$("dCancelarDia").addEventListener("click", () => preguntar({ tipo: "cancelar", paso: "alcance", ref: dia, dow: dowDe(dia) }));
+$("cerrHorario").addEventListener("click", abrirHorario);
+$("verHorario").addEventListener("click", abrirHorario);
+$("reiniciar").addEventListener("click", async () => { await T.reiniciar(); await recargar(); });
+$("salir").addEventListener("click", async () => { await T.logout(); if (T.modo === "demo") location.href = "index.html"; });
+
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("lError").hidden = true;
+  try { await T.login($("lEmail").value.trim(), $("lClave").value); }
+  catch (err) { $("lError").textContent = "Email o contraseña incorrectos."; $("lError").hidden = false; }
+});
+$("lGoogle").addEventListener("click", async () => {
+  $("lError").hidden = true;
+  try { await T.loginGoogle(); }
+  catch (err) {
+    if (err && err.code === "auth/popup-closed-by-user") return;
+    $("lError").textContent = err && err.code === "auth/unauthorized-domain"
+      ? "Esta dirección no está autorizada en Firebase (Authentication → Dominios autorizados)."
+      : "No se pudo entrar con Google. Probá de nuevo.";
+    $("lError").hidden = false;
+  }
+});
+
+(async () => {
+  T = await Turnos.conectar();
+  $("modoDemo").hidden = T.modo !== "demo";
+  T.onAuth(async (u) => {
+    const ok = u && (T.modo === "demo" || (N.admins || []).includes(u.email));
+    if (!ok && enHorario) { enHorario = false; hDraft = null; $("vHorario").hidden = true; document.body.classList.remove("en-horario"); }
+    $("vLogin").hidden = !!ok; $("vPanel").hidden = !ok || enHorario;
+    if (u && !ok) { $("lError").textContent = "Esta cuenta no tiene acceso al panel."; $("lError").hidden = false; T.logout(); }
+    if (ok) { await recargar(); }
+  });
+  // Refresca solo cada minuto y al volver a la app
+  setInterval(() => { if (!$("vPanel").hidden && !confirmando && !pregunta && !form) recargar(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !$("vPanel").hidden) recargar(); });
+})();
+</script>
+</body>
+</html>

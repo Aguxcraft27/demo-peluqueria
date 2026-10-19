@@ -312,6 +312,7 @@
       async marcarAvisado(id) { await F.updateDoc(F.doc(col("turnos"), id), { avisado: true }); },
       onAuth(cb) { AU.onAuthStateChanged(auth, cb); },
       login(email, clave) { return AU.signInWithEmailAndPassword(auth, email, clave); },
+      loginGoogle() { return AU.signInWithPopup(auth, new AU.GoogleAuthProvider()); },
       logout() { return AU.signOut(auth); }
     };
   }
