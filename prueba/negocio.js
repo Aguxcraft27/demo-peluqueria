@@ -3,13 +3,13 @@
    Para cada cliente se cambia SOLO este archivo.
    ========================================================== */
 window.NEGOCIO = {
-  id: "corte-fino",                 // identificador único, sin espacios (separa los datos de cada cliente)
+  id: "prueba",                 // identificador único, sin espacios (separa los datos de cada cliente)
   nombre: "Corte Fino",
   rubro: "Barbería y peluquería",
   ciudad: "Fray Bentos",
   slogan: "Cortes clásicos y modernos, sin esperar.",
-  demo: true,                       // muestra la franja "Página de ejemplo"
-  web: "https://aguxcraft27.github.io/demo-peluqueria/",
+  demo: false,                       // muestra la franja "Página de ejemplo"
+  web: "https://aguxcraft27.github.io/demo-peluqueria/prueba/",
   whatsapp: "59800000000",          // número del local, con código de país, sin + ni espacios
   instagram: "",                    // usuario sin @ (vacío = no se muestra)
   direccion: "18 de Julio 1234",
@@ -56,6 +56,6 @@ window.NEGOCIO = {
   mensajeRecordatorio: "Hola {nombre}! Te recordamos tu turno de {servicio} en {negocio} {cuando} a las {hora}. Si no podés venir, cancelalo acá: {link}",
 
   // ---- Modo real (Firebase). Vacío = modo demo: los datos se guardan solo en este dispositivo.
-  firebase: {},                     // pegar acá la configuración web de Firebase (ver SETUP-FIREBASE.md)
-  admins: []                        // emails que pueden entrar al panel, ej: ["peluquero@gmail.com"]
+  firebase: { apiKey: "AIzaSyADxqD0RkSEFW4XBHHlpd-T44T-8TaPO1s", authDomain: "gen-lang-client-0458344561.firebaseapp.com", projectId: "gen-lang-client-0458344561", storageBucket: "gen-lang-client-0458344561.firebasestorage.app", messagingSenderId: "182547497807", appId: "1:182547497807:web:bcbff087d2308116437b3a" },                     // pegar acá la configuración web de Firebase (ver SETUP-FIREBASE.md)
+  admins: ["boscoagustin10@gmail.com"]                        // emails que pueden entrar al panel, ej: ["peluquero@gmail.com"]
 };
