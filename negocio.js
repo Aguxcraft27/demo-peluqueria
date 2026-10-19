@@ -10,7 +10,7 @@ window.NEGOCIO = {
   slogan: "Cortes clásicos y modernos, sin esperar.",
   demo: true,                       // muestra la franja "Página de ejemplo"
   web: "https://aguxcraft27.github.io/demo-peluqueria/",
-  whatsapp: "59800000000",          // número del local, con código de país, sin + ni espacios
+  whatsapp: "59899387715",          // número del local, con código de país, sin + ni espacios
   instagram: "",                    // usuario sin @ (vacío = no se muestra)
   direccion: "18 de Julio 1234",
   mapa: "https://maps.google.com/?q=Fray+Bentos",
