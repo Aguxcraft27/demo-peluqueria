@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="estilo.css">
-<script src="negocio.js"></script>
-<script src="sistema.js"></script>
+<link rel="stylesheet" href="estilo.css?v=8">
+<script src="negocio.js?v=8"></script>
+<script src="sistema.js?v=8"></script>
 <style>
 body { padding-bottom: 32px; }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 0 8px; }
@@ -222,7 +222,12 @@ const nTurnos = (n) => n + (n === 1 ? " turno" : " turnos");
 
 async function recargar() {
   try { [turnos, diasMap] = await Promise.all([T.turnos(DESDE(), HASTA()), T.dias(DESDE(), HASTA())]); Turnos.aplicarHorario(diasMap); pintar(); }
-  catch (e) { $("agenda").replaceChildren(el("div", { class: "slot" }, el("span"), el("span", { class: "error", text: "No se pudieron cargar los turnos. Revisá la conexión." }))); }
+  catch (e) {
+    console.error(e);
+    // Un TypeError casi siempre es una versión vieja de sistema.js guardada en el navegador, no un problema de red.
+    const txt = e instanceof TypeError ? "La página se actualizó. Recargala para ver los turnos." : "No se pudieron cargar los turnos. Revisá la conexión.";
+    $("agenda").replaceChildren(el("div", { class: "slot" }, el("span"), el("span", { class: "error", text: txt })));
+  }
 }
 
 function pintar() { pintarTira(); pintarDia(); }
