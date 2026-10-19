@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="estilo.css">
+<script src="negocio.js"></script>
+<script src="sistema.js"></script>
+<style>
+body { padding-bottom: 32px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 0 8px; }
+.top h1 { font-size: 1.5rem; font-weight: 800; }
+.top small { display: block; color: var(--suave); font-size: .8rem; }
+.link { background: none; border: 0; color: var(--suave); font: 500 .9rem var(--body); text-decoration: underline; cursor: pointer; padding: 6px; }
+.tira { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; }
+.tira .dia { position: relative; }
+.tira .dia .n { font-size: .7rem; font-weight: 600; color: var(--acento); }
+.tira .dia.on .n { color: #fff; }
+.tira .dia.cerrado { opacity: .5; }
+.cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cab h2 { font-size: 1.4rem; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--tinta); font-size: 1rem; font-weight: 600; flex-direction: row; cursor: pointer; }
+.switch small { display: block; font-weight: 400; font-size: .82rem; color: var(--suave); }
+.switch input { appearance: none; -webkit-appearance: none; width: 52px; height: 30px; flex-shrink: 0; border-radius: 999px; background: var(--linea); position: relative; cursor: pointer; padding: 0; border: 0; transition: background .2s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+.switch input:checked { background: var(--ok); }
+.switch input:checked::after { transform: translateX(22px); }
+.switch input:disabled { opacity: .5; cursor: default; }
+.filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.filtro { font: 500 .88rem var(--body); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--linea); background: var(--fondo); color: var(--tinta); cursor: pointer; }
+.filtro.on { background: var(--tinta); color: var(--fondo); border-color: var(--tinta); }
+.agenda { display: flex; flex-direction: column; background: var(--sup); border: 1px solid var(--linea); border-radius: 14px; }
+.slot { display: grid; grid-template-columns: 54px 1fr; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--linea); align-items: start; }
+.slot:first-child { border-top: 0; }
+.slot > time { font-weight: 600; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.slot.libre > time, .slot.libre .vacio { color: color-mix(in srgb, var(--tinta) 35%, var(--fondo)); font-weight: 400; }
+.turno { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: var(--fondo); border-left: 4px solid var(--acento); }
+.turno + .turno { margin-top: 6px; }
+.turno b { font-size: 1rem; }
+.turno .det { font-size: .85rem; color: var(--suave); }
+.turno .acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.turno .acc .btn { padding: 7px 12px; font-size: .85rem; }
+.cancelados { display: flex; flex-direction: column; gap: 10px; }
+.cancelados .turno { border-left-color: var(--cerrado); }
+.ok-txt { color: var(--ok); font-weight: 600; font-size: .85rem; }
+.resumen { display: flex; gap: 16px; font-size: .9rem; color: var(--suave); }
+.resumen b { color: var(--tinta); font-family: var(--display); font-size: 1.3rem; display: block; }
+.confirmar { background: color-mix(in srgb, var(--cerrado) 8%, var(--sup)); border-color: color-mix(in srgb, var(--cerrado) 35%, var(--linea)); }
+.confirmar .acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.login { max-width: 380px; margin: 12vh auto 0; }
+.modo { background: var(--acento-suave); color: var(--tinta); border-radius: 12px; padding: 10px 14px; font-size: .85rem; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- Login (solo en modo real) -->
+  <div id="vLogin" hidden>
+    <form class="card login" id="loginForm">
+      <h1 style="font-size:1.6rem" id="lNombre">Panel</h1>
+      <p class="aviso">Entrá con el email y la contraseña del local.</p>
+      <label>Email<input id="lEmail" type="email" autocomplete="username" required></label>
+      <label>Contraseña<input id="lClave" type="password" autocomplete="current-password" required></label>
+      <p class="error" id="lError" role="alert" hidden></p>
+      <button class="btn pri" type="submit">Entrar</button>
+    </form>
+  </div>
+
+  <!-- Panel -->
+  <div id="vPanel" hidden>
+    <header class="top">
+      <div><small>Panel de turnos</small><h1 id="pNombre"></h1></div>
+      <div><a class="link" id="verWeb" target="_blank" rel="noopener">Ver web</a><button class="link" id="salir" type="button">Salir</button></div>
+    </header>
+    <div class="modo" id="modoDemo" hidden><span>Modo demo: los datos se guardan solo en este dispositivo.</span><button class="link" id="reiniciar" type="button">Reiniciar</button></div>
+
+    <section style="padding-top:12px">
+      <div class="tira" id="tira" aria-label="Días"></div>
+
+      <div class="card">
+        <div class="cab">
+          <h2 id="dTitulo"></h2>
+          <div class="resumen"><span><b id="dCant">0</b>turnos</span></div>
+        </div>
+        <label class="switch"><span>Reservas abiertas<small id="dSwitchTxt"></small></span><input type="checkbox" role="switch" id="dSwitch"></label>
+        <div class="card confirmar" id="dPregunta" hidden>
+          <b id="dPreguntaTxt"></b>
+          <div class="acc">
+            <button class="btn peligro" id="dCerrarTodo" type="button">Cerrar y cancelar todos</button>
+            <button class="btn sec" id="dSoloCerrar" type="button">Solo cerrar reservas nuevas</button>
+            <button class="btn sec" id="dNoCerrar" type="button">Volver</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cancelados" id="cancelados" hidden>
+        <h2 style="font-size:1.25rem">Cancelados: avisá a cada uno</h2>
+        <p class="aviso">Tocá "Avisar" y se abre WhatsApp con el mensaje escrito y el link para que elija otro horario.</p>
+        <div class="agenda" id="cancList"></div>
+      </div>
+
+      <div class="filtros" id="filtros"></div>
+      <div class="agenda" id="agenda"></div>
+      <button class="btn sec" id="dCancelarDia" type="button">Cancelar todos los turnos de este día</button>
+    </section>
+  </div>
+</main>
+
+<script>
+const N = NEGOCIO, U = Turnos.U, $ = (id) => document.getElementById(id), el = U.el;
+const DIAS3 = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const r = document.documentElement.style;
+r.setProperty("--acento", N.colores.acento); r.setProperty("--fondo", N.colores.fondo); r.setProperty("--tinta", N.colores.tinta);
+document.title = "Panel · " + N.nombre;
+$("pNombre").textContent = N.nombre; $("lNombre").textContent = N.nombre;
+$("verWeb").href = "index.html";
+
+let T = null, turnos = [], diasMap = {}, dia = U.hoyIso(), filtro = "", confirmando = null;
+const DESDE = () => U.sumarDias(U.hoyIso(), -1), HASTA = () => U.sumarDias(U.hoyIso(), (N.diasParaReservar || 14) + 7);
+
+function toast(msg) { alert(msg); }
+const delDia = () => turnos.filter(t => t.fecha === dia);
+const confirmadosDe = (f) => turnos.filter(t => t.fecha === f && t.estado === "confirmado");
+
+async function recargar() {
+  try { [turnos, diasMap] = await Promise.all([T.turnos(DESDE(), HASTA()), T.dias(DESDE(), HASTA())]); pintar(); }
+  catch (e) { $("agenda").replaceChildren(el("div", { class: "slot" }, el("span"), el("span", { class: "error", text: "No se pudieron cargar los turnos. Revisá la conexión." }))); }
+}
+
+function pintar() { pintarTira(); pintarDia(); }
+
+function pintarTira() {
+  const fechas = []; for (let f = U.hoyIso(); f <= HASTA(); f = U.sumarDias(f, 1)) fechas.push(f);
+  $("tira").replaceChildren(...fechas.map(f => {
+    const d = U.fechaDe(f), n = confirmadosDe(f).length, abierto = Turnos.abiertoDia(f, diasMap);
+    return el("button", { type: "button", class: "dia" + (f === dia ? " on" : "") + (abierto ? "" : " cerrado"), "aria-pressed": String(f === dia),
+      "aria-label": U.fechaLarga(f) + ", " + n + " turnos" + (abierto ? "" : ", cerrado"),
+      onclick: () => { dia = f; confirmando = null; pintar(); } },
+      el("small", { text: f === U.hoyIso() ? "Hoy" : DIAS3[d.getDay()] }), el("b", { text: String(d.getDate()) }),
+      el("span", { class: "n", text: abierto ? (n ? n + " t" : "·") : "cerr." }));
+  }));
+  const on = $("tira").querySelector(".on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
+}
+
+function pintarDia() {
+  const tramos = Turnos.tramosDe(dia), abierto = Turnos.abiertoDia(dia, diasMap), conf = confirmadosDe(dia);
+  $("dTitulo").textContent = (dia === U.hoyIso() ? "Hoy, " : "") + U.fechaLarga(dia);
+  $("dCant").textContent = conf.length;
+  $("dSwitch").checked = abierto;
+  $("dSwitch").disabled = !tramos.length;
+  $("dSwitchTxt").textContent = !tramos.length ? "Cerrado por horario" : abierto ? "Los clientes pueden reservar este día" : "Nadie puede reservar este día";
+  $("dPregunta").hidden = confirmando !== "cerrar";
+  $("dPreguntaTxt").textContent = "Hay " + conf.length + (conf.length === 1 ? " turno" : " turnos") + " ese día. ¿Qué hacemos?";
+  $("dCancelarDia").hidden = !conf.length;
+  $("dCancelarDia").textContent = confirmando === "cancelarDia" ? "Tocá de nuevo para confirmar: se cancelan " + conf.length + " turnos" : "Cancelar todos los turnos de este día";
+  $("dCancelarDia").className = "btn " + (confirmando === "cancelarDia" ? "peligro" : "sec");
+
+  // Filtro por estilista
+  $("filtros").hidden = N.equipo.length < 2;
+  $("filtros").replaceChildren(...[{ id: "", nombre: "Todos" }, ...N.equipo].map(p =>
+    el("button", { type: "button", class: "filtro" + (filtro === p.id ? " on" : ""), "aria-pressed": String(filtro === p.id), text: p.nombre, onclick: () => { filtro = p.id; pintarDia(); } })));
+
+  // Agenda: una fila cada 30 min con los turnos que empiezan en ese rato
+  const lista = conf.filter(t => !filtro || t.estilista === filtro).sort((a, b) => a.hora.localeCompare(b.hora));
+  const filas = [], usados = new Set();
+  for (const [a, b] of tramos) for (let m = U.aMin(a); m < U.aMin(b); m += 30) {
+    const aqui = lista.filter(t => { const x = U.aMin(t.hora); return x >= m && x < m + 30; });
+    aqui.forEach(t => usados.add(t.id));
+    filas.push(el("div", { class: "slot" + (aqui.length ? "" : " libre") }, el("time", { text: U.aHora(m) }),
+      aqui.length ? el("div", {}, ...aqui.map(tarjeta)) : el("span", { class: "vacio", text: "Libre" })));
+  }
+  // Turnos fuera del horario (por si cambió el horario después de reservar)
+  lista.filter(t => !usados.has(t.id)).forEach(t => filas.push(el("div", { class: "slot" }, el("time", { text: t.hora }), el("div", {}, tarjeta(t)))));
+  $("agenda").replaceChildren(...(filas.length ? filas : [el("div", { class: "slot libre" }, el("span"), el("span", { class: "vacio", text: "Cerrado por horario." }))]));
+
+  // Cancelados del día, para avisar
+  const canc = delDia().filter(t => t.estado === "cancelado" && (!filtro || t.estilista === filtro));
+  $("cancelados").hidden = !canc.length;
+  $("cancList").replaceChildren(...canc.map(t => el("div", { class: "slot" }, el("time", { text: t.hora }), el("div", {}, tarjetaCancelada(t)))));
+}
+
+const linkCliente = (t, texto) => U.wa(t.ejemplo ? "" : t.celular, texto);
+const celVisible = (c) => c ? (c.startsWith("598") ? "0" + c.slice(3) : "+" + c) : "turno de ejemplo";
+
+function tarjeta(t) {
+  const p = U.estilista(t.estilista);
+  const acc = confirmando === t.id
+    ? el("div", { class: "acc" }, el("span", { class: "det", text: "¿Cancelar este turno?" }),
+        el("button", { class: "btn peligro", type: "button", text: "Sí, cancelar", onclick: () => cancelar([t]) }),
+        el("button", { class: "btn sec", type: "button", text: "No", onclick: () => { confirmando = null; pintarDia(); } }))
+    : el("div", { class: "acc" },
+        el("a", { class: "btn sec", href: linkCliente(t, "Hola " + t.nombre + ", te escribo de " + N.nombre + "."), target: "_blank", rel: "noopener", text: "WhatsApp" }),
+        el("button", { class: "btn sec", type: "button", text: "Cancelar", onclick: () => { confirmando = t.id; pintarDia(); } }));
+  return el("div", { class: "turno" },
+    el("b", { text: t.nombre }),
+    el("span", { class: "det", text: [t.hora + " · " + t.servicio + " (" + t.minutos + " min)", N.equipo.length > 1 ? p.nombre : null, celVisible(t.celular)].filter(Boolean).join(" · ") }),
+    acc);
+}
+function tarjetaCancelada(t) {
+  const p = U.estilista(t.estilista);
+  return el("div", { class: "turno" },
+    el("b", { text: t.nombre }),
+    el("span", { class: "det", text: [t.servicio, N.equipo.length > 1 ? p.nombre : null, celVisible(t.celular)].filter(Boolean).join(" · ") }),
+    el("div", { class: "acc" },
+      el("a", { class: "btn " + (t.avisado ? "sec" : "pri"), href: linkCliente(t, Turnos.mensajeCancelacion(t)), target: "_blank", rel: "noopener",
+        text: t.avisado ? "Avisar de nuevo" : "Avisar por WhatsApp", onclick: () => avisado(t) }),
+      t.avisado ? el("span", { class: "ok-txt", text: "✓ Avisado" }) : null));
+}
+
+async function avisado(t) { if (t.avisado) return; try { await T.marcarAvisado(t.id); t.avisado = true; setTimeout(pintarDia, 300); } catch (e) {} }
+async function cancelar(lista) {
+  confirmando = null;
+  try { for (const t of lista) await T.cancelar(t); } catch (e) { toast("No se pudo cancelar. Revisá la conexión."); }
+  await recargar();
+  if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
+}
+async function setDia(abierto) {
+  try { await T.setDia(dia, abierto); } catch (e) { toast("No se pudo cambiar el día."); }
+  await recargar();
+}
+
+$("dSwitch").addEventListener("change", () => {
+  const quiere = $("dSwitch").checked;
+  if (quiere) { confirmando = null; setDia(true); return; }
+  if (confirmadosDe(dia).length) { $("dSwitch").checked = true; confirmando = "cerrar"; pintarDia(); return; }
+  setDia(false);
+});
+$("dCerrarTodo").addEventListener("click", async () => { const c = confirmadosDe(dia); await T.setDia(dia, false).catch(() => {}); await cancelar(c); });
+$("dSoloCerrar").addEventListener("click", () => { confirmando = null; setDia(false); });
+$("dNoCerrar").addEventListener("click", () => { confirmando = null; pintarDia(); });
+$("dCancelarDia").addEventListener("click", () => {
+  if (confirmando !== "cancelarDia") { confirmando = "cancelarDia"; pintarDia(); return; }
+  cancelar(confirmadosDe(dia));
+});
+$("reiniciar").addEventListener("click", async () => { await T.reiniciar(); await recargar(); });
+$("salir").addEventListener("click", async () => { await T.logout(); if (T.modo === "demo") location.href = "index.html"; });
+
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("lError").hidden = true;
+  try { await T.login($("lEmail").value.trim(), $("lClave").value); }
+  catch (err) { $("lError").textContent = "Email o contraseña incorrectos."; $("lError").hidden = false; }
+});
+
+(async () => {
+  T = await Turnos.conectar();
+  $("modoDemo").hidden = T.modo !== "demo";
+  T.onAuth(async (u) => {
+    const ok = u && (T.modo === "demo" || (N.admins || []).includes(u.email));
+    $("vLogin").hidden = !!ok; $("vPanel").hidden = !ok;
+    if (u && !ok) { $("lError").textContent = "Esta cuenta no tiene acceso al panel."; $("lError").hidden = false; T.logout(); }
+    if (ok) { await recargar(); }
+  });
+  // Refresca solo cada minuto y al volver a la app
+  setInterval(() => { if (!$("vPanel").hidden && !confirmando) recargar(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !$("vPanel").hidden) recargar(); });
+})();
+</script>
+</body>
+</html>

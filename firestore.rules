@@ -1,0 +1,46 @@
+rules_version = '2';
+// Reglas de seguridad de Firestore para el sistema de turnos.
+// Reemplazá peluquero@ejemplo.com por el email del local (el mismo que pusiste en `admins` de negocio.js).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function admin() {
+      return request.auth != null && request.auth.token.email in ['peluquero@ejemplo.com'];
+    }
+    function diaCerrado(n, fecha) {
+      return exists(/databases/$(database)/documents/negocios/$(n)/dias/$(fecha))
+        && get(/databases/$(database)/documents/negocios/$(n)/dias/$(fecha)).data.abierto == false;
+    }
+
+    match /negocios/{n} {
+      // Días cerrados a mano: los ve cualquiera, los cambia solo el peluquero.
+      match /dias/{fecha} {
+        allow read: if true;
+        allow write: if admin();
+      }
+
+      // Bloques de 15 min ocupados. Públicos pero SIN datos personales.
+      // Solo se pueden crear (nunca pisar): si el horario ya está tomado, la reserva falla.
+      match /ocupados/{id} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(['fecha', 'estilista', 'turno'])
+          && request.resource.data.fecha is string
+          && id.matches(request.resource.data.fecha + '_.*')
+          && !diaCerrado(n, request.resource.data.fecha)
+          && existsAfter(/databases/$(database)/documents/negocios/$(n)/turnos/$(request.resource.data.turno));
+        allow delete: if admin();
+      }
+
+      // Turnos con nombre y celular: los ve y cambia solo el peluquero.
+      // Cualquiera puede crear uno, siempre junto con sus bloques ocupados.
+      match /turnos/{id} {
+        allow read, update, delete: if admin();
+        allow create: if request.resource.data.keys().hasOnly(['fecha', 'hora', 'minutos', 'servicio', 'estilista', 'nombre', 'celular', 'estado', 'bloques', 'creado'])
+          && request.resource.data.estado == 'confirmado'
+          && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+          && request.resource.data.celular is string && request.resource.data.celular.size() <= 20
+          && request.resource.data.bloques is list && request.resource.data.bloques.size() > 0 && request.resource.data.bloques.size() <= 12
+          && existsAfter(/databases/$(database)/documents/negocios/$(n)/ocupados/$(request.resource.data.bloques[0]));
+      }
+    }
+  }
+}

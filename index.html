@@ -4,132 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Peluquería</title>
-<meta name="description" content="Precios, trabajos y reservas.">
+<meta name="description" content="Precios, trabajos y reserva de turnos online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
-<script>
-/* ==========================================================
-   CONFIGURACIÓN DEL NEGOCIO
-   Para cada cliente se cambia SOLO este bloque.
-   ========================================================== */
-const NEGOCIO = {
-  nombre: "Corte Fino",
-  rubro: "Barbería y peluquería",
-  ciudad: "Fray Bentos",
-  slogan: "Cortes clásicos y modernos, sin esperar.",
-  demo: true,                       // muestra la franja "Página de ejemplo"
-  whatsapp: "59800000000",          // número con código de país, sin + ni espacios
-  instagram: "",                    // usuario sin @ (vacío = no se muestra)
-  direccion: "18 de Julio 1234",
-  mapa: "https://maps.google.com/?q=Fray+Bentos",
-  colores: { acento: "#B4532A", fondo: "#F7F3EE", tinta: "#1E1A17" },
-  // Horario por día (0 = domingo … 6 = sábado). Cada tramo: ["desde", "hasta"].
-  horarios: {
-    0: [],
-    1: [["09:00", "12:30"], ["15:00", "20:00"]],
-    2: [["09:00", "12:30"], ["15:00", "20:00"]],
-    3: [["09:00", "12:30"], ["15:00", "20:00"]],
-    4: [["09:00", "12:30"], ["15:00", "20:00"]],
-    5: [["09:00", "20:00"]],
-    6: [["09:00", "14:00"]]
-  },
-  servicios: [
-    { nombre: "Corte de pelo", precio: 450, minutos: 30, detalle: "Lavado incluido" },
-    { nombre: "Corte + barba", precio: 650, minutos: 45, detalle: "Perfilado con navaja" },
-    { nombre: "Barba", precio: 300, minutos: 20, detalle: "Toalla caliente" },
-    { nombre: "Corte niño (hasta 12)", precio: 350, minutos: 25, detalle: "" },
-    { nombre: "Color / mechas", precio: 1500, minutos: 90, detalle: "Precio desde, según largo" }
-  ],
-  // reserva: link a la agenda online del estilista (Google Calendar, etc.).
-  // Si está vacío, la reserva se manda armada por WhatsApp.
-  equipo: [
-    { nombre: "Martín", especialidad: "Degradés y barba", foto: "", reserva: "" },
-    { nombre: "Lucía", especialidad: "Color y cortes largos", foto: "", reserva: "" }
-  ],
-  // Fotos de trabajos (rutas o URLs). Vacío = muestra recuadros de ejemplo.
-  trabajos: []
-};
-</script>
-<style>
-:root {
-  --acento: #B4532A; --fondo: #F7F3EE; --tinta: #1E1A17;
-  --sup: color-mix(in srgb, var(--fondo) 55%, white);
-  --suave: color-mix(in srgb, var(--tinta) 62%, var(--fondo));
-  --linea: color-mix(in srgb, var(--tinta) 13%, var(--fondo));
-  --acento-suave: color-mix(in srgb, var(--acento) 13%, var(--fondo));
-  --ok: #2F7A4A; --cerrado: #A23B33;
-  --display: "Fraunces", Georgia, serif;
-  --body: "Inter", "Segoe UI", system-ui, sans-serif;
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-html { scroll-behavior: smooth; scroll-padding-top: 16px; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body { margin: 0; background: var(--fondo); color: var(--tinta); font: 16px/1.5 var(--body); padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
-.wrap { max-width: 640px; margin: 0 auto; padding: 0 16px; }
-h1, h2 { font-family: var(--display); margin: 0; line-height: 1.05; letter-spacing: -0.01em; text-wrap: balance; }
-h2 { font-size: 1.6rem; font-weight: 600; }
-.etiqueta { font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--acento); }
-.suave { color: var(--suave); }
-section { padding: 36px 0 8px; display: flex; flex-direction: column; gap: 16px; }
-
-.demo { background: var(--tinta); color: var(--fondo); text-align: center; font-size: .8rem; padding: 6px 16px; }
-
-/* Portada */
-.portada { padding: 40px 0 8px; display: flex; flex-direction: column; gap: 14px; }
-.portada h1 { font-size: clamp(2.6rem, 12vw, 4rem); font-weight: 800; }
-.estado { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: var(--sup); border: 1px solid var(--linea); align-self: flex-start; }
-.estado i { width: 8px; height: 8px; border-radius: 50%; background: var(--cerrado); }
-.estado.abierto i { background: var(--ok); }
-.acciones { display: flex; gap: 10px; flex-wrap: wrap; }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 1rem var(--body); padding: 13px 20px; border-radius: 12px; border: 1px solid transparent; text-decoration: none; cursor: pointer; }
-.btn.pri { background: var(--acento); color: #fff; }
-.btn.sec { background: transparent; color: var(--tinta); border-color: var(--linea); }
-.btn:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid color-mix(in srgb, var(--acento) 45%, transparent); outline-offset: 2px; }
-
-/* Servicios */
-.lista { background: var(--sup); border: 1px solid var(--linea); border-radius: 14px; }
-.serv { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; border-top: 1px solid var(--linea); }
-.serv:first-child { border-top: 0; }
-.serv b { font-weight: 600; }
-.serv small { display: block; color: var(--suave); font-size: .85rem; }
-.precio { font-family: var(--display); font-size: 1.25rem; font-weight: 600; white-space: nowrap; }
-
-/* Trabajos */
-.galeria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.galeria > * { aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--acento-suave); }
-.galeria img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.galeria .ej { display: grid; place-items: center; color: var(--acento); font-size: .75rem; text-align: center; padding: 6px;
-  background: repeating-linear-gradient(135deg, var(--acento-suave) 0 10px, color-mix(in srgb, var(--acento) 8%, var(--fondo)) 10px 20px); }
-
-/* Equipo */
-.equipo { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.persona { background: var(--sup); border: 1px solid var(--linea); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
-.avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--acento); color: #fff; display: grid; place-items: center; font: 600 1.4rem var(--display); overflow: hidden; }
-.avatar img { width: 100%; height: 100%; object-fit: cover; }
-.persona .btn { padding: 9px 14px; font-size: .9rem; width: 100%; }
-
-/* Reserva */
-form { background: var(--sup); border: 1px solid var(--linea); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-label { display: flex; flex-direction: column; gap: 5px; font-size: .85rem; font-weight: 500; color: var(--suave); min-width: 0; }
-.fila { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-input, select { font: inherit; font-size: 16px; color: var(--tinta); background: var(--fondo); border: 1px solid var(--linea); border-radius: 10px; padding: 11px 12px; width: 100%; min-width: 0; }
-.aviso { font-size: .85rem; color: var(--suave); margin: 0; }
-.error { color: var(--cerrado); font-size: .9rem; margin: 0; }
-
-/* Horarios */
-.horas { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; background: var(--sup); border: 1px solid var(--linea); border-radius: 14px; padding: 14px 16px; }
-.horas .hoy { font-weight: 600; color: var(--acento); }
-
-footer { padding: 32px 0 16px; text-align: center; font-size: .8rem; color: var(--suave); }
-
-/* Barra fija */
-.barra { position: fixed; left: 0; right: 0; bottom: 0; background: color-mix(in srgb, var(--fondo) 92%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--linea); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
-.barra .wrap { display: flex; gap: 10px; padding: 0; }
-.barra .btn { flex: 1; }
-svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-</style>
+<link rel="stylesheet" href="estilo.css">
+<script src="negocio.js"></script>
+<script src="sistema.js"></script>
 </head>
 <body>
 <div class="demo" id="demo" hidden>Página de ejemplo · los datos son inventados</div>
@@ -167,19 +48,28 @@ svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-widt
 
   <section id="reservar">
     <span class="etiqueta">Turnos</span>
-    <h2>Reservá en 30 segundos</h2>
-    <form id="form" novalidate>
+    <h2>Reservá tu turno</h2>
+    <div class="card" id="reserva">
       <label>Servicio<select id="fServ"></select></label>
-      <label>Con quién<select id="fPers"></select></label>
+      <label id="persLabel">Con quién<select id="fPers"></select></label>
+      <div class="campo"><span class="lbl">Día</span><div class="dias" id="fDias"></div></div>
+      <div class="campo"><span class="lbl">Hora</span><div class="horas-grid" id="fHoras"><span class="suave">Elegí un día.</span></div></div>
       <div class="fila">
-        <label>Día<input type="date" id="fDia"></label>
-        <label>Hora<select id="fHora"></select></label>
+        <label>Tu nombre<input id="fNombre" autocomplete="given-name" maxlength="40" placeholder="Ej: Juan"></label>
+        <label>Celular<input id="fCel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="09X XXX XXX"></label>
       </div>
-      <label>Tu nombre<input id="fNombre" autocomplete="given-name" maxlength="40" placeholder="Ej: Juan"></label>
       <p class="error" id="fError" role="alert" hidden></p>
-      <button class="btn pri" type="submit">Pedir turno por WhatsApp</button>
-      <p class="aviso">Se abre WhatsApp con tu pedido escrito. Te confirmamos el turno por ahí.</p>
-    </form>
+      <button class="btn pri" id="fOk" type="button">Confirmar turno</button>
+      <p class="aviso" id="modoAviso"></p>
+    </div>
+    <div class="card listo" id="confirmado" hidden>
+      <span class="check" aria-hidden="true">✓</span>
+      <h2>¡Turno confirmado!</h2>
+      <p id="cResumen" style="margin:0"></p>
+      <p class="aviso">Si no podés venir, avisanos por WhatsApp así le dejás el lugar a otra persona.</p>
+      <a class="btn sec" id="cWa" target="_blank" rel="noopener">Avisar por WhatsApp</a>
+      <button class="btn sec" id="cOtro" type="button">Reservar otro turno</button>
+    </div>
   </section>
 
   <section id="donde">
@@ -198,19 +88,8 @@ svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-widt
 </div></nav>
 
 <script>
-const N = NEGOCIO, $ = (id) => document.getElementById(id);
-const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const money = (n) => "$ " + Number(n).toLocaleString("es-UY");
-const aMin = (h) => { const [a, b] = h.split(":").map(Number); return a * 60 + b; };
-const aHora = (m) => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
-const iso = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10); };
-const wa = (texto) => "https://wa.me/" + N.whatsapp + (texto ? "?text=" + encodeURIComponent(texto) : "");
-function el(tag, props = {}, ...kids) {
-  const n = document.createElement(tag);
-  for (const [k, v] of Object.entries(props)) { if (k === "text") n.textContent = v; else if (k === "class") n.className = v; else n.setAttribute(k, v); }
-  kids.forEach(k => k != null && n.append(k));
-  return n;
-}
+const N = NEGOCIO, U = Turnos.U, $ = (id) => document.getElementById(id), el = U.el;
+const DIAS3 = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 /* Datos generales */
 const r = document.documentElement.style;
@@ -220,98 +99,130 @@ $("demo").hidden = !N.demo;
 $("rubro").textContent = N.rubro + " · " + N.ciudad;
 $("nombre").textContent = N.nombre;
 $("slogan").textContent = N.slogan;
-$("waBtn").href = wa("Hola " + N.nombre + ", tengo una consulta.");
+$("waBtn").href = U.wa(N.whatsapp, "Hola " + N.nombre + ", tengo una consulta.");
 $("mapa").href = N.mapa; $("mapa").textContent = N.direccion + " · Abrir en el mapa";
 $("pie").textContent = N.nombre + " · " + N.direccion + ", " + N.ciudad;
+if (N.demo) $("pie").append(el("br"), el("a", { href: "panel.html", style: "color:inherit", text: "Ver el panel del peluquero (demo)" }));
 if (N.instagram) { $("igLink").hidden = false; $("igLink").href = "https://instagram.com/" + N.instagram; }
 
 /* Abierto / cerrado (se recalcula cada minuto) */
 function estado() {
   const ahora = new Date(), m = ahora.getHours() * 60 + ahora.getMinutes(), hoy = N.horarios[ahora.getDay()] || [];
-  const tramo = hoy.find(([a, b]) => m >= aMin(a) && m < aMin(b));
-  let txt;
+  const tramo = hoy.find(([a, b]) => m >= U.aMin(a) && m < U.aMin(b));
+  let txt = "Cerrado";
   if (tramo) txt = "Abierto ahora · hasta las " + tramo[1];
   else {
-    const prox = hoy.find(([a]) => aMin(a) > m);
+    const prox = hoy.find(([a]) => U.aMin(a) > m);
     if (prox) txt = "Cerrado · abre hoy a las " + prox[0];
-    else {
-      for (let i = 1; i <= 7; i++) { const d = (ahora.getDay() + i) % 7, t = N.horarios[d] || []; if (t.length) { txt = "Cerrado · abre " + (i === 1 ? "mañana" : DIAS[d].toLowerCase()) + " a las " + t[0][0]; break; } }
+    else for (let i = 1; i <= 7; i++) {
+      const d = (ahora.getDay() + i) % 7, t = N.horarios[d] || [];
+      if (t.length) { txt = "Cerrado · abre " + (i === 1 ? "mañana" : U.DIAS[d].toLowerCase()) + " a las " + t[0][0]; break; }
     }
   }
   $("estado").classList.toggle("abierto", !!tramo);
-  $("estado").lastElementChild.textContent = txt || "Cerrado";
+  $("estado").lastElementChild.textContent = txt;
 }
 estado(); setInterval(estado, 60000);
 
-/* Servicios */
+/* Servicios, trabajos, equipo, horarios */
 $("servicios").replaceChildren(...N.servicios.map(s => el("div", { class: "serv" },
   el("div", {}, el("b", { text: s.nombre }), el("small", { text: [s.minutos + " min", s.detalle].filter(Boolean).join(" · ") })),
-  el("span", { class: "precio", text: money(s.precio) }))));
+  el("span", { class: "precio", text: U.money(s.precio) }))));
 
-/* Trabajos */
 const fotos = N.trabajos.length ? N.trabajos : Array(6).fill(null);
 $("galeria").replaceChildren(...fotos.map((f, i) => f
   ? el("div", {}, el("img", { src: f, alt: "Trabajo " + (i + 1) + " de " + N.nombre, loading: "lazy" }))
   : el("div", { class: "ej", text: "Foto de un trabajo" })));
 
-/* Equipo */
-$("equipo").replaceChildren(...N.equipo.map((p, i) => {
-  const btn = p.reserva
-    ? el("a", { class: "btn pri", href: p.reserva, target: "_blank", rel: "noopener", text: "Reservar con " + p.nombre })
-    : el("a", { class: "btn pri", href: "#reservar", text: "Reservar con " + p.nombre });
-  if (!p.reserva) btn.addEventListener("click", () => { $("fPers").value = String(i); });
-  return el("div", { class: "persona" },
-    el("div", { class: "avatar" }, p.foto ? el("img", { src: p.foto, alt: p.nombre }) : p.nombre[0]),
-    el("div", {}, el("b", { text: p.nombre }), el("div", { class: "suave", style: "font-size:.85rem", text: p.especialidad })),
-    btn);
-}));
+$("equipo").replaceChildren(...N.equipo.map(p => el("div", { class: "persona" },
+  el("div", { class: "avatar" }, p.foto ? el("img", { src: p.foto, alt: p.nombre }) : p.nombre[0]),
+  el("div", {}, el("b", { text: p.nombre }), el("div", { class: "suave", style: "font-size:.85rem", text: p.especialidad })),
+  el("a", { class: "btn pri", href: "#reservar", text: "Reservar con " + p.nombre, onclick: () => { $("fPers").value = p.id; cargarHoras(); } }))));
 if (N.equipo.length < 2) $("equipo-sec").hidden = true;
 
-/* Horarios */
 const hoyN = new Date().getDay();
 $("horas").replaceChildren(...[1, 2, 3, 4, 5, 6, 0].flatMap(d => {
-  const t = N.horarios[d] || [], c = d === hoyN ? "hoy" : "";
-  return [el("span", { class: c, text: DIAS[d] }), el("span", { class: c, text: t.length ? t.map(x => x.join(" a ")).join(" y ") : "Cerrado" })];
+  const t = N.horarios[d] || [], c = d === hoyN ? "hoy" : null;
+  return [el("span", { class: c, text: U.DIAS[d] }), el("span", { class: c, text: t.length ? t.map(x => x.join(" a ")).join(" y ") : "Cerrado" })];
 }));
 
-/* Reserva */
-N.servicios.forEach((s, i) => $("fServ").append(el("option", { value: String(i), text: s.nombre + " · " + money(s.precio) })));
+/* ---------- Reserva ---------- */
+let T = null, diasMap = {}, libres = [];
+const sel = { fecha: null, hora: null, est: null };
+const fechas = Array.from({ length: N.diasParaReservar || 14 }, (_, i) => U.sumarDias(U.hoyIso(), i));
+N.servicios.forEach((s, i) => $("fServ").append(el("option", { value: String(i), text: s.nombre + " · " + U.money(s.precio) })));
 $("fPers").append(el("option", { value: "", text: "Me da igual" }));
-N.equipo.forEach((p, i) => $("fPers").append(el("option", { value: String(i), text: p.nombre })));
-if (N.equipo.length < 2) $("fPers").closest("label").hidden = true;
+N.equipo.forEach(p => $("fPers").append(el("option", { value: p.id, text: p.nombre })));
+if (N.equipo.length < 2) $("persLabel").hidden = true;
 
-function primerDiaAbierto() { const d = new Date(); for (let i = 0; i < 14; i++) { if ((N.horarios[d.getDay()] || []).length && horasDe(iso(d)).length) return iso(d); d.setDate(d.getDate() + 1); } return iso(new Date()); }
-function horasDe(fecha) {
-  const d = new Date(fecha + "T12:00"), tramos = N.horarios[d.getDay()] || [], dur = N.servicios[$("fServ").value || 0].minutos;
-  const ahora = new Date(), esHoy = fecha === iso(ahora), minimo = ahora.getHours() * 60 + ahora.getMinutes() + 30;
-  const out = [];
-  for (const [a, b] of tramos) for (let m = aMin(a); m + dur <= aMin(b); m += 30) if (!esHoy || m >= minimo) out.push(aHora(m));
-  return out;
+const error = (m) => { $("fError").textContent = m; $("fError").hidden = !m; };
+
+function pintarDias() {
+  $("fDias").replaceChildren(...fechas.map(f => {
+    const d = U.fechaDe(f), ok = Turnos.abiertoDia(f, diasMap), on = f === sel.fecha;
+    return el("button", { type: "button", class: "dia" + (on ? " on" : ""), "aria-pressed": String(on), disabled: !ok,
+      "aria-label": U.fechaLarga(f) + (ok ? "" : ", sin turnos"),
+      onclick: () => { sel.fecha = f; sel.hora = null; pintarDias(); cargarHoras(); } },
+      el("small", { text: f === U.hoyIso() ? "Hoy" : DIAS3[d.getDay()] }), el("b", { text: String(d.getDate()) }));
+  }));
 }
-function cargarHoras() {
-  const f = $("fDia").value, hs = f ? horasDe(f) : [];
-  $("fHora").replaceChildren(...(hs.length ? hs.map(h => el("option", { value: h, text: h })) : [el("option", { value: "", text: "Sin horarios" })]));
+function pintarHoras() {
+  $("fHoras").replaceChildren(...(libres.length
+    ? libres.map(x => el("button", { type: "button", class: "hora" + (sel.hora === x.hora ? " on" : ""), "aria-pressed": String(sel.hora === x.hora), text: x.hora,
+        onclick: () => { sel.hora = x.hora; sel.est = x.estilista; pintarHoras(); } }))
+    : [el("span", { class: "suave", text: "No quedan horarios este día. Probá con otro." })]));
 }
-$("fDia").min = iso(new Date());
-$("fDia").value = primerDiaAbierto();
-cargarHoras();
-$("fDia").addEventListener("change", cargarHoras);
+async function cargarHoras() {
+  if (!T || !sel.fecha) return;
+  sel.hora = null;
+  $("fHoras").replaceChildren(el("span", { class: "suave", text: "Buscando horarios…" }));
+  try {
+    const s = N.servicios[$("fServ").value], oc = await T.ocupados(sel.fecha);
+    libres = Turnos.horariosLibres(sel.fecha, s.minutos, $("fPers").value, oc);
+    pintarHoras();
+  } catch (e) { $("fHoras").replaceChildren(el("span", { class: "error", text: "No se pudieron cargar los horarios. Revisá tu conexión." })); }
+}
+async function cargarDias() {
+  diasMap = await T.dias(fechas[0], fechas[fechas.length - 1]);
+  if (!sel.fecha || !Turnos.abiertoDia(sel.fecha, diasMap)) sel.fecha = fechas.find(f => Turnos.abiertoDia(f, diasMap)) || null;
+  pintarDias();
+  if (sel.fecha) cargarHoras(); else $("fHoras").replaceChildren(el("span", { class: "suave", text: "No hay días disponibles por ahora." }));
+}
 $("fServ").addEventListener("change", cargarHoras);
+$("fPers").addEventListener("change", cargarHoras);
 
-$("form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const err = (m) => { $("fError").textContent = m; $("fError").hidden = false; };
-  $("fError").hidden = true;
-  const nombre = $("fNombre").value.trim(), dia = $("fDia").value, hora = $("fHora").value;
-  if (!dia) return err("Elegí un día.");
-  if (!hora) return err("Ese día no hay horarios. Probá con otro.");
-  if (!nombre) return err("Escribí tu nombre.");
-  const s = N.servicios[$("fServ").value], p = N.equipo[$("fPers").value];
-  const d = new Date(dia + "T12:00");
-  const fechaTxt = DIAS[d.getDay()].toLowerCase() + " " + d.getDate() + "/" + (d.getMonth() + 1);
-  const msg = "Hola! Soy " + nombre + ". Quiero reservar *" + s.nombre + "*" + (p ? " con " + p.nombre : "") + " el " + fechaTxt + " a las " + hora + ". ¿Está disponible?";
-  window.open(wa(msg), "_blank", "noopener");
+$("fOk").addEventListener("click", async () => {
+  error("");
+  const nombre = $("fNombre").value.trim(), cel = $("fCel").value.trim();
+  if (!sel.fecha) return error("Elegí un día.");
+  if (!sel.hora) return error("Elegí un horario.");
+  if (!nombre) return error("Escribí tu nombre.");
+  if (!U.celValido(cel)) return error("Revisá el celular (ej: 099 123 456).");
+  const s = N.servicios[$("fServ").value];
+  const t = { fecha: sel.fecha, hora: sel.hora, minutos: s.minutos, servicio: s.nombre, estilista: sel.est,
+    nombre, celular: U.normalizarCel(cel), estado: "confirmado", bloques: Turnos.idsBloques(sel.fecha, sel.est, sel.hora, s.minutos) };
+  $("fOk").disabled = true; $("fOk").textContent = "Reservando…";
+  try {
+    await T.reservar(t);
+    const p = U.estilista(t.estilista);
+    $("cResumen").textContent = s.nombre + (N.equipo.length > 1 ? " con " + p.nombre : "") + ", el " + U.fechaCorta(t.fecha) + " a las " + t.hora + ".";
+    $("cWa").href = U.wa(N.whatsapp, "Hola, soy " + nombre + ". Tenía turno el " + U.fechaCorta(t.fecha) + " a las " + t.hora + " y no voy a poder ir.");
+    $("reserva").hidden = true; $("confirmado").hidden = false;
+    $("confirmado").scrollIntoView({ block: "center" });
+  } catch (e) {
+    if (e.message === "red") error("No se pudo reservar. Revisá tu conexión y probá de nuevo.");
+    else { error("Ese horario se acaba de ocupar o el día se cerró. Elegí otro."); await cargarDias(); }
+  } finally { $("fOk").disabled = false; $("fOk").textContent = "Confirmar turno"; }
 });
+$("cOtro").addEventListener("click", () => { $("confirmado").hidden = true; $("reserva").hidden = false; cargarDias(); });
+
+(async () => {
+  try {
+    T = await Turnos.conectar();
+    if (T.modo === "demo") $("modoAviso").textContent = "Modo demo: las reservas se guardan solo en este dispositivo.";
+    await cargarDias();
+  } catch (e) { $("fHoras").replaceChildren(el("span", { class: "error", text: "La reserva online no está disponible ahora. Escribinos por WhatsApp." })); }
+})();
 </script>
 </body>
 </html>
