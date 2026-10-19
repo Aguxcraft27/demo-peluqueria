@@ -34,5 +34,8 @@ Cada peluquería usa su propio `id` en `negocio.js`, y sus datos quedan separado
 ## Días cerrados
 El peluquero cierra desde el panel y la web le pregunta "¿Solo ese día o siempre?". Se guardan en la colección `dias`: un documento por fecha (`2026-10-22`) o uno por día de la semana (`semana-4` = todos los jueves; 0 = domingo). No hay que crear nada a mano: se crean solos y las reglas ya los cubren. Si actualizás las reglas de una instalación vieja, volvé a pegar todo `firestore.rules`.
 
+## Horario editable
+El peluquero cambia los días y horarios desde el panel, en **Horario** (como el "Horario comercial" de WhatsApp Business): interruptor por día, hasta 3 tramos y botón Guardar. Se guarda en `dias/horario` (los tramos como texto, ej. `"09:00-12:30"`); el `horarios` de `negocio.js` queda solo como valor inicial. Apagar un día guarda además `dias/semana-N`, que es lo que miran las reglas. Está cubierto por `match /dias/{fecha}` (lectura pública, escritura solo del admin): no hay que cambiar las reglas. Límite: las reglas bloquean los días cerrados pero no controlan las horas dentro de un día abierto; eso lo cuida la página.
+
 ## Mensaje de cancelación
 Se edita en `negocio.js` → `mensajeCancelacion`. Desde el panel, "Avisar por WhatsApp" abre el chat de cada cliente con el mensaje escrito. Si el peluquero prefiere tener también un `/cancelar` en WhatsApp Business, puede crear una respuesta rápida con el mismo texto.

@@ -46,7 +46,28 @@
   }
 
   /* ---------- Reglas de agenda ---------- */
-  const tramosDe = (f) => N.horarios[fechaDe(f).getDay()] || [];
+  /* Horario semanal efectivo. Arranca con el de negocio.js; si el peluquero guardó uno
+     (documento dias/horario = { semana: { "0": [...], … "6": [...] } }) pasa a mandar ese.
+     Cada día es una lista de tramos: pares ["09:00","12:30"] (demo) o textos "09:00-12:30" (Firebase,
+     que no permite listas dentro de listas). Lista vacía = cerrado ese día. */
+  const horarioBase = () => { const o = {}; for (let d = 0; d < 7; d++) o[d] = ((N.horarios || {})[d] || []).map(t => [t[0], t[1]]); return o; };
+  const HHMM = /^\d{2}:\d{2}$/;
+  function normalizarTramos(l) {
+    return (Array.isArray(l) ? l : [])
+      .map(t => typeof t === "string" ? t.split("-") : Array.isArray(t) ? t : t && [t.desde, t.hasta])
+      .filter(t => t && HHMM.test(t[0]) && HHMM.test(t[1]) && aMin(t[0]) < aMin(t[1]))
+      .map(t => [t[0], t[1]]).sort((x, y) => aMin(x[0]) - aMin(y[0]));
+  }
+  let HORARIO = horarioBase();
+  // dias = lo que devuelve backend.dias(); si trae "horario" se usa, si no vale el de negocio.js
+  function aplicarHorario(dias) {
+    const h = horarioBase(), s = dias && dias.horario && dias.horario.semana;
+    if (s) for (let d = 0; d < 7; d++) if (Array.isArray(s[d])) h[d] = normalizarTramos(s[d]);
+    HORARIO = h;
+  }
+  const tramosDeDow = (d) => HORARIO[d] || [];
+  const codificarSemana = (sem) => { const o = {}; for (let d = 0; d < 7; d++) o[d] = (sem[d] || []).map(t => t[0] + "-" + t[1]); return o; };
+  const tramosDe = (f) => tramosDeDow(fechaDe(f).getDay());
   // dias = datos de la colección "dias":
   //   "2026-10-22": { abierto: false }  -> cierre (o apertura) puntual de una fecha
   //   "semana-4":   { abierto: false }  -> cierre semanal: todos los jueves (0 = domingo … 6 = sábado)
@@ -93,7 +114,7 @@
     const leer = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
     let db = leer();
     const guardar = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
-    const fresco = () => { db = leer() || db; return db; };
+    const fresco = () => { db = leer() || db; aplicarHorario(db.dias); return db; };
 
     function reservarSync(t) {
       if (!abiertoDia(t.fecha, db.dias)) throw new Error("cerrado");
@@ -124,7 +145,8 @@
         }
       }
     }
-    if (!db) { db = { turnos: {}, ocupados: {}, dias: {} }; sembrar(); guardar(); }
+    if (!db) { db = { turnos: {}, ocupados: {}, dias: {} }; aplicarHorario(db.dias); sembrar(); guardar(); }
+    aplicarHorario(db.dias);
 
     return {
       modo: "demo",
@@ -136,12 +158,18 @@
       },
       async setDia(id, abierto) { fresco().dias[id] = { abierto }; guardar(); },
       async borrarDia(id) { delete fresco().dias[id]; guardar(); },
+      // Guarda el horario semanal y los cierres "para siempre" juntos: día apagado = tramos [] + semana-N cerrado.
+      async guardarHorario(semana, cerrados) {
+        fresco(); db.dias.horario = { semana };
+        for (let d = 0; d < 7; d++) { if (cerrados.includes(d)) db.dias[idSemana(d)] = { abierto: false }; else delete db.dias[idSemana(d)]; }
+        guardar(); aplicarHorario(db.dias);
+      },
       async cancelar(t) {
         fresco(); const x = db.turnos[t.id]; if (!x) return;
         x.estado = "cancelado"; (x.bloques || []).forEach(b => { if (db.ocupados[b] === t.id) delete db.ocupados[b]; }); guardar();
       },
       async marcarAvisado(id) { fresco(); if (db.turnos[id]) db.turnos[id].avisado = true; guardar(); },
-      async reiniciar() { db = { turnos: {}, ocupados: {}, dias: {} }; sembrar(); guardar(); },
+      async reiniciar() { db = { turnos: {}, ocupados: {}, dias: {} }; aplicarHorario(db.dias); sembrar(); guardar(); },
       onAuth(cb) { cb({ email: "demo" }); }, async login() {}, async logout() {}
     };
   }
@@ -156,13 +184,16 @@
     return {
       modo: "real",
       async dias(desde, hasta) {
-        // Dos lecturas: las fechas del rango y los 7 cierres semanales ("semana-0" … "semana-6"),
-        // que por su nombre quedan fuera del rango de fechas.
-        const [fechas, semana] = await Promise.all([
-          rango("dias", F.documentId(), desde, hasta), rango("dias", F.documentId(), idSemana(0), idSemana(6))]);
+        // Tres lecturas: las fechas del rango, los 7 cierres semanales ("semana-0" … "semana-6") y el
+        // horario semanal ("horario"); por su nombre los dos últimos quedan fuera del rango de fechas.
+        const [fechas, semana, horario] = await Promise.all([
+          rango("dias", F.documentId(), desde, hasta), rango("dias", F.documentId(), idSemana(0), idSemana(6)),
+          F.getDoc(F.doc(col("dias"), "horario"))]);
         const out = {};
         fechas.forEach(d => { out[d.id] = d.data(); });
         semana.forEach(d => { out[d.id] = d.data(); });
+        if (horario.exists()) out.horario = horario.data();
+        aplicarHorario(out);
         return out;
       },
       async ocupados(f) {
@@ -182,6 +213,16 @@
       },
       async setDia(id, abierto) { await F.setDoc(F.doc(col("dias"), id), { abierto }); },
       async borrarDia(id) { await F.deleteDoc(F.doc(col("dias"), id)); },
+      async guardarHorario(semana, cerrados) {
+        const b = F.writeBatch(fs);   // todo junto: el horario y los 7 cierres semanales
+        b.set(F.doc(col("dias"), "horario"), { semana: codificarSemana(semana) });
+        for (let d = 0; d < 7; d++) {
+          const ref = F.doc(col("dias"), idSemana(d));
+          if (cerrados.includes(d)) b.set(ref, { abierto: false }); else b.delete(ref);
+        }
+        await b.commit();
+        aplicarHorario({ horario: { semana } });
+      },
       async cancelar(t) {
         const b = F.writeBatch(fs);
         b.update(F.doc(col("turnos"), t.id), { estado: "cancelado" });
@@ -197,7 +238,7 @@
 
   window.Turnos = {
     conectar: () => (N.firebase && N.firebase.apiKey ? backendFirebase() : Promise.resolve(backendDemo())),
-    abiertoDia, idSemana, tramosDe, horariosLibres, idsBloques, bloquesDe, mensajeCancelacion,
+    abiertoDia, idSemana, tramosDe, tramosDeDow, aplicarHorario, horariosLibres, idsBloques, bloquesDe, mensajeCancelacion,
     U: { aMin, aHora, iso, hoyIso, fechaDe, sumarDias, fechaCorta, fechaLarga, money, estilista, normalizarCel, celValido, wa, el, DIAS }
   };
 })();

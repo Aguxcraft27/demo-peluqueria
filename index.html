@@ -107,7 +107,7 @@ if (N.instagram) { $("igLink").hidden = false; $("igLink").href = "https://insta
 
 /* Abierto / cerrado (se recalcula cada minuto) */
 function estado() {
-  const ahora = new Date(), m = ahora.getHours() * 60 + ahora.getMinutes(), hoy = N.horarios[ahora.getDay()] || [];
+  const ahora = new Date(), m = ahora.getHours() * 60 + ahora.getMinutes(), hoy = Turnos.tramosDeDow(ahora.getDay());
   const tramo = hoy.find(([a, b]) => m >= U.aMin(a) && m < U.aMin(b));
   let txt = "Cerrado";
   if (tramo) txt = "Abierto ahora · hasta las " + tramo[1];
@@ -115,14 +115,15 @@ function estado() {
     const prox = hoy.find(([a]) => U.aMin(a) > m);
     if (prox) txt = "Cerrado · abre hoy a las " + prox[0];
     else for (let i = 1; i <= 7; i++) {
-      const d = (ahora.getDay() + i) % 7, t = N.horarios[d] || [];
+      const d = (ahora.getDay() + i) % 7, t = Turnos.tramosDeDow(d);
       if (t.length) { txt = "Cerrado · abre " + (i === 1 ? "mañana" : U.DIAS[d].toLowerCase()) + " a las " + t[0][0]; break; }
     }
   }
   $("estado").classList.toggle("abierto", !!tramo);
   $("estado").lastElementChild.textContent = txt;
 }
-estado(); setInterval(estado, 60000);
+// Se dibuja recién cuando se leyó el horario guardado (ver cargarDias); si no se puede leer, vale el de negocio.js.
+setInterval(estado, 60000);
 
 /* Servicios, trabajos, equipo, horarios */
 $("servicios").replaceChildren(...N.servicios.map(s => el("div", { class: "serv" },
@@ -140,11 +141,14 @@ $("equipo").replaceChildren(...N.equipo.map(p => el("div", { class: "persona" },
   el("a", { class: "btn pri", href: "#reservar", text: "Reservar con " + p.nombre, onclick: () => { $("fPers").value = p.id; cargarHoras(); } }))));
 if (N.equipo.length < 2) $("equipo-sec").hidden = true;
 
-const hoyN = new Date().getDay();
-$("horas").replaceChildren(...[1, 2, 3, 4, 5, 6, 0].flatMap(d => {
-  const t = N.horarios[d] || [], c = d === hoyN ? "hoy" : null;
-  return [el("span", { class: c, text: U.DIAS[d] }), el("span", { class: c, text: t.length ? t.map(x => x.join(" a ")).join(" y ") : "Cerrado" })];
-}));
+function pintarHorarios() {
+  const hoyN = new Date().getDay();
+  $("horas").replaceChildren(...[1, 2, 3, 4, 5, 6, 0].flatMap(d => {
+    const t = Turnos.tramosDeDow(d), c = d === hoyN ? "hoy" : null;
+    return [el("span", { class: c, text: U.DIAS[d] }), el("span", { class: c, text: t.length ? t.map(x => x.join(" a ")).join(" y ") : "Cerrado" })];
+  }));
+  estado();
+}
 
 /* ---------- Reserva ---------- */
 let T = null, diasMap = {}, libres = [];
@@ -184,6 +188,8 @@ async function cargarHoras() {
 }
 async function cargarDias() {
   diasMap = await T.dias(fechas[0], fechas[fechas.length - 1]);
+  Turnos.aplicarHorario(diasMap);   // el horario guardado por el peluquero manda sobre el de negocio.js
+  pintarHorarios();
   if (!sel.fecha || !Turnos.abiertoDia(sel.fecha, diasMap)) sel.fecha = fechas.find(f => Turnos.abiertoDia(f, diasMap)) || null;
   pintarDias();
   if (sel.fecha) cargarHoras(); else $("fHoras").replaceChildren(el("span", { class: "suave", text: "No hay días disponibles por ahora." }));
@@ -221,7 +227,10 @@ $("cOtro").addEventListener("click", () => { $("confirmado").hidden = true; $("r
     T = await Turnos.conectar();
     if (T.modo === "demo") $("modoAviso").textContent = "Modo demo: las reservas se guardan solo en este dispositivo.";
     await cargarDias();
-  } catch (e) { $("fHoras").replaceChildren(el("span", { class: "error", text: "La reserva online no está disponible ahora. Escribinos por WhatsApp." })); }
+  } catch (e) {
+    pintarHorarios();
+    $("fHoras").replaceChildren(el("span", { class: "error", text: "La reserva online no está disponible ahora. Escribinos por WhatsApp." }));
+  }
 })();
 </script>
 </body>

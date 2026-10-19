@@ -26,7 +26,8 @@ service cloud.firestore {
     }
 
     match /negocios/{n} {
-      // Días cerrados a mano (por fecha, o por día de la semana con ids semana-0 … semana-6): los ve cualquiera, los cambia solo el peluquero.
+      // Días cerrados a mano (por fecha, o por día de la semana con ids semana-0 … semana-6) y el horario semanal
+      // editable (documento "horario"): los ve cualquiera, los cambia solo el peluquero.
       match /dias/{fecha} {
         allow read: if true;
         allow write: if admin();

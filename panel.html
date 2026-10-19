@@ -59,8 +59,39 @@ body { padding-bottom: 32px; }
 .cerrados .item-c { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--linea); }
 .cerrados .item-c small { display: block; color: var(--suave); font-size: .8rem; }
 .cerrados .item-c .btn { padding: 7px 12px; font-size: .85rem; flex-shrink: 0; }
-.cerrados .atajo { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--linea); }
-.cerrados .atajo label { flex: 1; }
+.cerrados .atajo { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--linea); }
+.link.ico { display: inline-flex; align-items: center; gap: 4px; }
+.link.ico svg.i { width: 16px; height: 16px; }
+.top > div:last-child { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+.toast { position: fixed; z-index: 20; left: 16px; right: 16px; top: calc(12px + env(safe-area-inset-top, 0px)); max-width: 440px; margin: 0 auto; background: var(--tinta); color: var(--fondo); border-radius: 12px; padding: 12px 16px; font-size: .92rem; font-weight: 500; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+
+/* Pantalla "Horario comercial" */
+body.en-horario { padding-bottom: 0; }
+.hcab { display: flex; align-items: center; gap: 12px; padding: 16px 0 8px; }
+.hcab h1 { font-size: 1.5rem; font-weight: 800; }
+.atras { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; border: 1px solid var(--linea); background: var(--sup); color: var(--tinta); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.hlista { list-style: none; margin: 14px 0 0; padding: 0; background: var(--sup); border: 1px solid var(--linea); border-radius: 14px; overflow: hidden; }
+.hfila { border-top: 1px solid var(--linea); }
+.hfila:first-child { border-top: 0; }
+.hfila-cab { display: flex; align-items: center; gap: 12px; padding: 4px 16px; }
+.hinfo { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; text-align: left; background: none; border: 0; padding: 10px 0; font: inherit; color: var(--tinta); cursor: pointer; }
+.hinfo b { font-weight: 700; font-size: 1.02rem; }
+.hinfo small { color: var(--suave); font-size: .86rem; overflow-wrap: anywhere; }
+.hinfo.cerrada { cursor: default; }
+.hfila .switch { flex-shrink: 0; }
+.hfila > .error { padding: 0 16px 10px; }
+.heditor { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px; }
+.htramo { display: grid; grid-template-columns: 1fr 1fr 44px; gap: 8px; align-items: end; }
+.htramo input[type=time] { padding: 11px 6px 11px 10px; }
+.htramo input[type=time]::-webkit-calendar-picker-indicator { margin-left: 0; padding: 0; }
+.htramo .quitar { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--linea); background: var(--fondo); color: var(--cerrado); font-size: 1.1rem; cursor: pointer; padding: 0; }
+.htramo .quitar:disabled { opacity: .35; cursor: default; }
+.heditor .acc2 { display: flex; gap: 8px; flex-wrap: wrap; }
+.heditor .acc2 .btn { padding: 9px 14px; font-size: .88rem; }
+.hbarra { position: sticky; bottom: 0; z-index: 5; display: flex; gap: 10px; margin: 16px -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--fondo) 92%, transparent); backdrop-filter: blur(8px); border-top: 1px solid var(--linea); }
+.hbarra .btn { padding: 15px 20px; }
+.hbarra .pri { flex: 1; font-size: 1.08rem; }
+#hPregunta { margin-top: 14px; }
 .fecha-cab { font-weight: 600; font-size: .85rem; padding: 8px 14px 2px; color: var(--suave); border-top: 1px solid var(--linea); }
 .fecha-cab:first-child { border-top: 0; }
 .login { max-width: 380px; margin: 12vh auto 0; }
@@ -86,7 +117,7 @@ body { padding-bottom: 32px; }
   <div id="vPanel" hidden>
     <header class="top">
       <div><small>Panel de turnos</small><h1 id="pNombre"></h1></div>
-      <div><a class="link" id="verWeb" target="_blank" rel="noopener">Ver web</a><button class="link" id="salir" type="button">Salir</button></div>
+      <div><button class="link ico" id="verHorario" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Horario</button><a class="link" id="verWeb" target="_blank" rel="noopener">Ver web</a><button class="link" id="salir" type="button">Salir</button></div>
     </header>
     <div class="modo" id="modoDemo" hidden><span>Modo demo: los datos se guardan solo en este dispositivo.</span><button class="link" id="reiniciar" type="button">Reiniciar</button></div>
 
@@ -109,9 +140,9 @@ body { padding-bottom: 32px; }
       <details class="card cerrados" id="cerrados">
         <summary id="cerrSum">Días cerrados</summary>
         <div class="lista-c" id="cerrLista"></div>
-        <div class="atajo" id="cerrAtajo">
-          <label>Cerrar para siempre<select id="cerrDow"></select></label>
-          <button class="btn sec" id="cerrBtn" type="button">Cerrar siempre</button>
+        <div class="atajo">
+          <p class="aviso" id="cerrFijos"></p>
+          <button class="btn sec" id="cerrHorario" type="button">Cambiar el horario comercial</button>
         </div>
       </details>
 
@@ -126,7 +157,28 @@ body { padding-bottom: 32px; }
       <button class="btn sec" id="dCancelarDia" type="button">Cancelar todos los turnos de este día</button>
     </section>
   </div>
+
+  <!-- Horario comercial -->
+  <div id="vHorario" hidden>
+    <header class="hcab">
+      <button class="atras" id="hAtras" type="button" aria-label="Volver al panel sin guardar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h1>Horario comercial</h1>
+    </header>
+    <p class="aviso">Prendé los días que atendés y poné el horario. Un día apagado queda cerrado para siempre, hasta que lo vuelvas a prender. Para cerrar solo una fecha, usá el interruptor de ese día en el panel.</p>
+    <ul class="hlista" id="hLista"></ul>
+    <div class="card confirmar" id="hPregunta" hidden role="alert">
+      <b id="hPreguntaTxt"></b>
+      <p class="aviso" id="hPreguntaSub"></p>
+      <div class="acc" id="hPreguntaAcc"></div>
+    </div>
+    <p class="error" id="hError" role="alert" hidden style="margin-top:12px"></p>
+    <div class="hbarra">
+      <button class="btn sec" id="hCancelar" type="button">Cancelar</button>
+      <button class="btn pri" id="hGuardar" type="button">Guardar</button>
+    </div>
+  </div>
 </main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
 const N = NEGOCIO, U = Turnos.U, $ = (id) => document.getElementById(id), el = U.el;
@@ -142,7 +194,14 @@ let T = null, turnos = [], diasMap = {}, dia = U.hoyIso(), filtro = "", confirma
 let pregunta = null;
 const DESDE = () => U.sumarDias(U.hoyIso(), -1), HASTA = () => U.sumarDias(U.hoyIso(), (N.diasParaReservar || 14) + 7);
 
-function toast(msg) { alert(msg); }
+// Aviso dentro de la página (nunca alert)
+let toastT = null;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 4500);
+}
+const ORDEN = [1, 2, 3, 4, 5, 6, 0];   // Lunes → Domingo
+let enHorario = false;
 const confirmadosDe = (f) => turnos.filter(t => t.fecha === f && t.estado === "confirmado");
 /* ---- Días de la semana (cierres semanales) ---- */
 const dowDe = (f) => U.fechaDe(f).getDay();
@@ -162,7 +221,7 @@ function resumenTurnos(lista) {
 const nTurnos = (n) => n + (n === 1 ? " turno" : " turnos");
 
 async function recargar() {
-  try { [turnos, diasMap] = await Promise.all([T.turnos(DESDE(), HASTA()), T.dias(DESDE(), HASTA())]); pintar(); }
+  try { [turnos, diasMap] = await Promise.all([T.turnos(DESDE(), HASTA()), T.dias(DESDE(), HASTA())]); Turnos.aplicarHorario(diasMap); pintar(); }
   catch (e) { $("agenda").replaceChildren(el("div", { class: "slot" }, el("span"), el("span", { class: "error", text: "No se pudieron cargar los turnos. Revisá la conexión." }))); }
 }
 
@@ -186,11 +245,13 @@ function pintarDia() {
   $("dTitulo").textContent = (dia === U.hoyIso() ? "Hoy, " : "") + U.fechaLarga(dia);
   $("dCant").textContent = conf.length;
   $("dSwitch").checked = abierto;
-  $("dSwitch").disabled = !tramos.length;
   const dow = dowDe(dia), ov = diasMap[dia], sem = cerradoSemana(dow);
-  $("dSwitchTxt").textContent = !tramos.length ? "Cerrado por horario"
+  // Si el día de la semana está cerrado para siempre, se abre desde "Horario comercial", no acá
+  $("dSwitch").disabled = !tramos.length || (sem && !ov);
+  $("dSwitchTxt").textContent = sem && !ov ? "Cerrado " + todosLos(dow) + ". Se cambia en Horario."
+    : !tramos.length ? "Cerrado por horario"
     : abierto ? (sem && ov ? "Abierto solo este día: " + todosLos(dow) + " están cerrados" : "Los clientes pueden reservar este día")
-    : sem ? "Cerrado " + todosLos(dow) : "Nadie puede reservar este día";
+    : "Nadie puede reservar este día";
   pintarPregunta();
   pintarCerrados();
   $("dCancelarDia").hidden = !conf.length;
@@ -248,9 +309,6 @@ function pintarPregunta() {
       sub.textContent = "Se cancelan los turnos y después les avisás por WhatsApp. Esto no cierra las reservas: para eso usá el interruptor."; sub.hidden = false;
       acc.push(boton("Solo " + solo + " (" + nTurnos(a) + ")", "peligro", () => { pregunta = null; cancelar(confirmadosDe(p.ref)); }));
       if (b > a) acc.push(boton(mayus(todosLos(d)) + " (" + nTurnos(b) + ")", "peligro", () => { pregunta = null; cancelar(turnosDeSemana(d)); }));
-    } else {
-      $("dPreguntaTxt").textContent = "Cerraste " + todosLos(d) + ". ¿Abrimos solo ese día o siempre?";
-      acc.push(boton("Abrir solo " + solo, "pri", () => abrirDia(p)), boton("Abrir " + todosLos(d), "sec", () => abrirSemana(p)));
     }
   } else {   // paso "turnos": hay turnos confirmados que se verían afectados
     const lista = listaDe(p.alcance, p);
@@ -273,24 +331,20 @@ async function aplicarCierre(alcance, p, cancelarTurnos) {
   try {
     if (alcance === "dia") await T.setDia(p.ref, false);
     else {
-      // "Siempre": se limpian los datos puntuales de ese día de la semana para que no queden jueves abiertos por error
+      // "Siempre" = lo mismo que apagar ese día en Horario comercial: tramos [] + semana-N cerrado.
+      // Se limpian los datos puntuales de ese día de la semana para que no queden jueves abiertos por error.
       for (const f of fechasConDato(p.dow)) await T.borrarDia(f);
-      await T.setDia(Turnos.idSemana(p.dow), false);
+      const semana = {}, cerrados = [p.dow];
+      for (let d = 0; d < 7; d++) {
+        semana[d] = d === p.dow ? [] : Turnos.tramosDeDow(d).map(x => [x[0], x[1]]);
+        if (d !== p.dow && cerradoSemana(d)) cerrados.push(d);
+      }
+      await T.guardarHorario(semana, cerrados);
     }
     for (const t of lista) await T.cancelar(t);
   } catch (e) { toast("No se pudo cerrar el día. Revisá la conexión."); }
   await recargar();
   if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
-}
-async function abrirDia(p) {
-  pregunta = null;
-  try { await T.setDia(p.ref, true); } catch (e) { toast("No se pudo abrir el día."); }
-  await recargar();
-}
-async function abrirSemana(p) {
-  pregunta = null;
-  try { await T.borrarDia(Turnos.idSemana(p.dow)); if (diasMap[p.ref]) await T.borrarDia(p.ref); } catch (e) { toast("No se pudo abrir el día."); }
-  await recargar();
 }
 async function borrar(id) {
   try { await T.borrarDia(id); } catch (e) { toast("No se pudo reabrir. Revisá la conexión."); }
@@ -299,22 +353,17 @@ async function borrar(id) {
 
 /* ---------- Días cerrados ---------- */
 function pintarCerrados() {
-  const semanales = [1, 2, 3, 4, 5, 6, 0].filter(cerradoSemana);
   const puntuales = Object.keys(diasMap).filter(k => esFecha(k) && k >= U.hoyIso() && Turnos.tramosDe(k).length &&
     (diasMap[k].abierto === false ? !cerradoSemana(dowDe(k)) : cerradoSemana(dowDe(k)))).sort();
   const item = (titulo, nota, texto, fn) => el("div", { class: "item-c" }, el("div", {}, el("b", { text: titulo }), nota ? el("small", { text: nota }) : null), boton(texto, "sec", fn));
-  const filas = [
-    ...semanales.map(d => item(mayus(todosLos(d)), "Cierre semanal", "Reabrir", () => borrar(Turnos.idSemana(d)))),
-    ...puntuales.map(f => diasMap[f].abierto === false
-      ? item(mayus(U.fechaCorta(f)), "Cerrado solo ese día", "Reabrir", () => borrar(f))
-      : item(mayus(U.fechaCorta(f)), "Abierto solo ese día", "Volver a cerrar", () => borrar(f)))];
-  $("cerrSum").textContent = "Días cerrados" + (semanales.length + puntuales.length ? " (" + (semanales.length + puntuales.length) + ")" : "");
-  $("cerrLista").replaceChildren(...(filas.length ? filas : [el("p", { class: "aviso", text: "No hay días cerrados a futuro." })]));
-  const posibles = [1, 2, 3, 4, 5, 6, 0].filter(d => (N.horarios[d] || []).length && !cerradoSemana(d));
-  const previo = $("cerrDow").value;
-  $("cerrDow").replaceChildren(...posibles.map(d => el("option", { value: String(d), text: mayus(todosLos(d)) })));
-  if (posibles.some(d => String(d) === previo)) $("cerrDow").value = previo;
-  $("cerrAtajo").hidden = !posibles.length;
+  const filas = puntuales.map(f => diasMap[f].abierto === false
+    ? item(mayus(U.fechaCorta(f)), "Cerrado solo ese día", "Reabrir", () => borrar(f))
+    : item(mayus(U.fechaCorta(f)), "Abierto solo ese día", "Volver a cerrar", () => borrar(f)));
+  $("cerrSum").textContent = "Días cerrados" + (puntuales.length ? " (" + puntuales.length + ")" : "");
+  $("cerrLista").replaceChildren(...(filas.length ? filas : [el("p", { class: "aviso", text: "No hay fechas cerradas a futuro." })]));
+  // Los días que no se atienden nunca se manejan en Horario comercial
+  const sin = ORDEN.filter(d => cerradoSemana(d) || !Turnos.tramosDeDow(d).length);
+  $("cerrFijos").textContent = sin.length ? "No atendés los días: " + sin.map(d => U.DIAS[d].toLowerCase()).join(", ") + "." : "Atendés todos los días de la semana.";
 }
 
 const linkCliente = (t, texto) => U.wa(t.ejemplo ? "" : t.celular, texto);
@@ -352,18 +401,180 @@ async function cancelar(lista) {
   await recargar();
   if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
 }
+/* ---------- Pantalla "Horario comercial" ---------- */
+// hDraft[d] = { on, tramos: [["09:00","12:30"], …] } (borrador; recién se guarda con el botón Guardar)
+let hDraft = null, hExp = null, hErr = {}, hConf = null, hGuardando = false, hRefs = {};
+const MAX_TRAMOS = 3;
+const copiaTramos = (tr) => tr.map(x => [x[0], x[1]]);
+const porDefecto = (d) => (N.horarios && (N.horarios[d] || []).length) ? copiaTramos(N.horarios[d]) : [["09:00", "18:00"]];
+const resumenDia = (x) => x.on ? x.tramos.map(([a, b]) => (a || "--:--") + " a " + (b || "--:--")).join(" y ") || "Sin horario" : "Cerrado";
+
+function abrirHorario() {
+  hDraft = {};
+  for (let d = 0; d < 7; d++) {
+    const tr = copiaTramos(Turnos.tramosDeDow(d));
+    hDraft[d] = { on: tr.length > 0 && !cerradoSemana(d), tramos: tr.length ? tr : porDefecto(d) };
+  }
+  hExp = null; hErr = {}; hConf = null; hGuardando = false; enHorario = true;
+  $("hError").hidden = true; pregunta = null; confirmando = null;
+  $("vPanel").hidden = true; $("vHorario").hidden = false; document.body.classList.add("en-horario");
+  pintarHorario(); window.scrollTo(0, 0);
+}
+function cerrarHorario() {
+  enHorario = false; hDraft = null; hConf = null;
+  $("vHorario").hidden = true; $("vPanel").hidden = false; document.body.classList.remove("en-horario");
+  window.scrollTo(0, 0);
+}
+
+// Devuelve el texto del error de un día (o "" si está bien)
+function validarTramos(tr) {
+  if (!tr.length) return "Agregá al menos un horario, o apagá el día.";
+  for (let i = 0; i < tr.length; i++) {
+    const [a, b] = tr[i], n = tr.length > 1 ? " del horario " + (i + 1) : "";
+    if (!a || !b) return "Completá el desde y el hasta" + n + ".";
+    if (U.aMin(a) % 15 || U.aMin(b) % 15) return "Los minutos tienen que ser 00, 15, 30 o 45" + n + ".";
+    if (U.aMin(a) >= U.aMin(b)) return "El desde tiene que ser antes que el hasta" + n + ".";
+  }
+  for (let i = 1; i < tr.length; i++)
+    if (U.aMin(tr[i][0]) < U.aMin(tr[i - 1][1])) return "Los horarios tienen que ir en orden y sin pisarse: el " + (i + 1) + " empieza antes de que termine el " + i + ".";
+  return "";
+}
+function nuevoTramo(tr) {
+  if (!tr.length) return ["09:00", "18:00"];
+  const ult = tr[tr.length - 1][1], d = Math.min((ult ? U.aMin(ult) : 12 * 60) + 60, 22 * 60);
+  return [U.aHora(d), U.aHora(Math.min(d + 180, 23 * 60 + 45))];
+}
+
+function filaHorario(d) {
+  const x = hDraft[d], nombre = U.DIAS[d], abierta = hExp === d && x.on;
+  const resumen = el("small", { text: resumenDia(x) });
+  const error = el("p", { class: "error", role: "alert", text: hErr[d] || "", hidden: !hErr[d] });
+  hRefs[d] = { resumen, error };
+  const sw = el("input", { type: "checkbox", role: "switch", id: "hsw" + d, "aria-label": nombre + ": abierto" });
+  sw.checked = x.on;
+  sw.addEventListener("change", () => {
+    x.on = sw.checked; hConf = null; delete hErr[d];
+    if (x.on) { if (!x.tramos.length) x.tramos = porDefecto(d); hExp = d; } else if (hExp === d) hExp = null;
+    pintarHorario();
+    const p = $("hsw" + d); if (p) p.focus();
+  });
+  const info = el("button", { type: "button", class: "hinfo" + (x.on ? "" : " cerrada"), "aria-expanded": x.on ? String(abierta) : null, "aria-controls": x.on ? "hed" + d : null,
+    onclick: () => { if (!x.on) return; hExp = hExp === d ? null : d; pintarHorario(); } }, el("b", { text: nombre }), resumen);
+  return el("li", { class: "hfila", id: "hfila" + d },
+    el("div", { class: "hfila-cab" }, info, el("label", { class: "switch" }, sw)),
+    error, abierta ? editorHorario(d) : null);
+}
+
+function editorHorario(d) {
+  const x = hDraft[d], nombre = U.DIAS[d];
+  const cambio = () => { hConf = null; pintarConfHorario(); hErr[d] = validarTramos(x.tramos); refrescarFila(d); };
+  const filas = x.tramos.map((t, i) => {
+    const pref = nombre + ", horario " + (i + 1) + ", ";
+    const campo = (txt, k) => el("label", {}, txt, el("input", { type: "time", step: "900", value: t[k] || null, required: true, "aria-label": pref + txt.toLowerCase(),
+      onchange: (e) => { t[k] = e.target.value; cambio(); } }));
+    return el("div", { class: "htramo" }, campo("Desde", 0), campo("Hasta", 1),
+      el("button", { class: "quitar", type: "button", text: "✕", disabled: x.tramos.length < 2, "aria-label": "Quitar " + pref.replace(/, $/, ""),
+        onclick: () => { x.tramos.splice(i, 1); hConf = null; hErr[d] = validarTramos(x.tramos); pintarHorario(); } }));
+  });
+  const otros = ORDEN.filter(o => o !== d && hDraft[o].on);
+  const agregar = el("button", { class: "btn sec", type: "button", text: "+ Agregar horario", disabled: x.tramos.length >= MAX_TRAMOS,
+    onclick: () => { x.tramos.push(nuevoTramo(x.tramos)); cambio(); pintarHorario(); } });
+  const copiar = el("button", { class: "btn sec", type: "button", text: "Copiar a los demás días abiertos", disabled: !otros.length,
+    onclick: () => {
+      const err = validarTramos(x.tramos);
+      if (err) { hErr[d] = err; return pintarHorario(); }
+      otros.forEach(o => { hDraft[o].tramos = copiaTramos(x.tramos); delete hErr[o]; });
+      hConf = null; pintarHorario(); toast("Horario copiado a " + otros.length + (otros.length === 1 ? " día." : " días."));
+    } });
+  return el("div", { class: "heditor", id: "hed" + d }, ...filas,
+    el("div", { class: "acc2" }, agregar, copiar),
+    x.tramos.length >= MAX_TRAMOS ? el("p", { class: "aviso", text: "Máximo " + MAX_TRAMOS + " horarios por día." }) : null);
+}
+// Actualiza solo el resumen y el error de una fila (así no se pierde el foco al escribir la hora)
+function refrescarFila(d) {
+  const r = hRefs[d]; if (!r) return;
+  r.resumen.textContent = resumenDia(hDraft[d]);
+  r.error.textContent = hErr[d] || ""; r.error.hidden = !hErr[d];
+}
+function pintarHorario() {
+  hRefs = {};
+  $("hLista").replaceChildren(...ORDEN.map(filaHorario));
+  pintarConfHorario();
+}
+
+// Turnos confirmados de hoy en adelante que entraban en el horario de antes y no entran en el nuevo
+const cabeEn = (t, tramos) => { const a = U.aMin(t.hora), b = a + t.minutos; return tramos.some(([x, y]) => a >= U.aMin(x) && b <= U.aMin(y)); };
+function conflictosHorario(nuevo) {
+  const hoy = U.hoyIso(), ahora = new Date().getHours() * 60 + new Date().getMinutes();
+  return turnos.filter(t => t.estado === "confirmado" && t.fecha >= hoy && !(t.fecha === hoy && U.aMin(t.hora) + t.minutos <= ahora))
+    .filter(t => {
+      const d = dowDe(t.fecha), viejo = cerradoSemana(d) ? [] : Turnos.tramosDeDow(d);
+      return cabeEn(t, viejo) && !cabeEn(t, nuevo[d]);
+    }).sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+}
+function pintarConfHorario() {
+  const box = $("hPregunta"); box.hidden = !hConf;
+  if (!hConf) return;
+  const n = hConf.lista.length;
+  $("hPreguntaTxt").textContent = (n === 1 ? "Hay 1 turno confirmado" : "Hay " + n + " turnos confirmados") + " que queda" + (n === 1 ? "" : "n") + " fuera del nuevo horario.";
+  $("hPreguntaSub").textContent = resumenTurnos(hConf.lista) + ". ¿Los cancelamos?";
+  $("hPreguntaAcc").replaceChildren(
+    boton("Guardar y cancelar esos turnos", "peligro", () => guardarHorario(true)),
+    boton("Guardar y mantenerlos", "sec", () => guardarHorario(false)),
+    boton("Volver", "sec", () => { hConf = null; pintarConfHorario(); }));
+}
+
+function intentarGuardar() {
+  if (hGuardando) return;
+  hConf = null; $("hError").hidden = true;
+  let primero = null;
+  for (const d of ORDEN) { hErr[d] = hDraft[d].on ? validarTramos(hDraft[d].tramos) : ""; if (hErr[d] && primero === null) primero = d; }
+  if (primero !== null) {
+    hExp = primero; pintarHorario();
+    $("hfila" + primero).scrollIntoView({ block: "center" });
+    return;
+  }
+  const nuevo = {}; for (let d = 0; d < 7; d++) nuevo[d] = hDraft[d].on ? hDraft[d].tramos : [];
+  const lista = conflictosHorario(nuevo);
+  if (lista.length) { hConf = { lista }; pintarConfHorario(); $("hPregunta").scrollIntoView({ block: "center" }); return; }
+  guardarHorario(false);
+}
+async function guardarHorario(cancelarTurnos) {
+  if (hGuardando) return;
+  const semana = {}, cerrados = [];
+  for (let d = 0; d < 7; d++) { semana[d] = hDraft[d].on ? copiaTramos(hDraft[d].tramos) : []; if (!hDraft[d].on) cerrados.push(d); }
+  const lista = cancelarTurnos && hConf ? hConf.lista : [];
+  hGuardando = true; $("hGuardar").disabled = true; $("hCancelar").disabled = true; $("hGuardar").textContent = "Guardando…";
+  try {
+    // Un día apagado es un cierre para siempre: se limpian las fechas sueltas de ese día de la semana
+    for (const d of cerrados) for (const f of fechasConDato(d)) await T.borrarDia(f);
+    await T.guardarHorario(semana, cerrados);
+    for (const t of lista) await T.cancelar(t);
+  } catch (e) {
+    hGuardando = false; $("hGuardar").disabled = false; $("hCancelar").disabled = false; $("hGuardar").textContent = "Guardar";
+    $("hError").textContent = "No se pudo guardar. Revisá la conexión y probá de nuevo."; $("hError").hidden = false;
+    return;
+  }
+  hGuardando = false; $("hGuardar").disabled = false; $("hCancelar").disabled = false; $("hGuardar").textContent = "Guardar";
+  cerrarHorario();
+  await recargar();
+  toast("Horario guardado" + (lista.length ? ". Cancelaste " + nTurnos(lista.length) + ": avisales abajo." : "."));
+  if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
+}
+$("hGuardar").addEventListener("click", intentarGuardar);
+$("hCancelar").addEventListener("click", cerrarHorario);
+$("hAtras").addEventListener("click", cerrarHorario);
+
 $("dSwitch").addEventListener("change", () => {
   const quiere = $("dSwitch").checked, dow = dowDe(dia);
   $("dSwitch").checked = !quiere;   // el interruptor se mueve recién cuando se aplica el cambio
-  if (!quiere) return preguntar({ tipo: "cerrar", paso: "alcance", ref: dia, dow });
-  if (cerradoSemana(dow)) return preguntar({ tipo: "abrir", paso: "alcance", ref: dia, dow });
-  pregunta = null; borrar(dia);   // estaba cerrado solo ese día: se borra el cierre y vuelve a la normalidad
+  pregunta = null;
+  if (!quiere && !cerradoSemana(dow)) return preguntar({ tipo: "cerrar", paso: "alcance", ref: dia, dow });
+  borrar(dia);   // estaba cerrado solo ese día (o abierto solo ese día): se borra el dato y vuelve a la normalidad
 });
 $("dCancelarDia").addEventListener("click", () => preguntar({ tipo: "cancelar", paso: "alcance", ref: dia, dow: dowDe(dia) }));
-$("cerrBtn").addEventListener("click", () => {
-  const dow = Number($("cerrDow").value);
-  elegirCierre("semana", { tipo: "cerrar", ref: null, dow });
-});
+$("cerrHorario").addEventListener("click", abrirHorario);
+$("verHorario").addEventListener("click", abrirHorario);
 $("reiniciar").addEventListener("click", async () => { await T.reiniciar(); await recargar(); });
 $("salir").addEventListener("click", async () => { await T.logout(); if (T.modo === "demo") location.href = "index.html"; });
 
@@ -378,7 +589,8 @@ $("loginForm").addEventListener("submit", async (e) => {
   $("modoDemo").hidden = T.modo !== "demo";
   T.onAuth(async (u) => {
     const ok = u && (T.modo === "demo" || (N.admins || []).includes(u.email));
-    $("vLogin").hidden = !!ok; $("vPanel").hidden = !ok;
+    if (!ok && enHorario) { enHorario = false; hDraft = null; $("vHorario").hidden = true; document.body.classList.remove("en-horario"); }
+    $("vLogin").hidden = !!ok; $("vPanel").hidden = !ok || enHorario;
     if (u && !ok) { $("lError").textContent = "Esta cuenta no tiene acceso al panel."; $("lError").hidden = false; T.logout(); }
     if (ok) { await recargar(); }
   });
