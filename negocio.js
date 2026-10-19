@@ -36,13 +36,24 @@ window.NEGOCIO = {
     { nombre: "Color / mechas", precio: 1500, minutos: 90, detalle: "Precio desde, según largo" }
   ],
   equipo: [
-    { id: "martin", nombre: "Martín", especialidad: "Degradés y barba", foto: "" },
-    { id: "lucia", nombre: "Lucía", especialidad: "Color y cortes largos", foto: "" }
+    { id: "martin", nombre: "Martín", especialidad: "Degradés y barba", foto: "https://images.unsplash.com/photo-1553521041-d168abd31de3?w=160&h=160&q=70&auto=format&fit=crop&crop=faces" },
+    { id: "lucia", nombre: "Lucía", especialidad: "Color y cortes largos", foto: "https://images.unsplash.com/photo-1761839256840-7780a45b85dc?w=160&h=160&q=70&auto=format&fit=crop&crop=focalpoint&fp-x=0.47&fp-y=0.2&fp-z=3" }
   ],
-  trabajos: [],                     // fotos de trabajos (rutas o URLs). Vacío = recuadros de ejemplo
+  // Fotos de ejemplo de Unsplash (licencia libre). Para un cliente real, usar fotos de su Instagram con su permiso.
+  trabajos: [   // fotos de trabajos (rutas o URLs). Vacío = recuadros de ejemplo
+    "https://images.unsplash.com/photo-1630827020718-3433092696e7?w=600&q=70&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1568339434343-2a640a1a9946?w=600&q=70&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1635273051839-003bf06a8751?w=600&q=70&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1772442088712-df1780cbb709?w=600&q=70&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1599011176306-4a96f1516d4d?w=600&q=70&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?w=600&q=70&auto=format&fit=crop"
+  ],
 
   // Mensaje que se le manda a cada cliente cuando el peluquero cancela.
   mensajeCancelacion: "Hola {nombre}, te escribo de {negocio}. Perdón, me surgió un imprevisto y no voy a poder atenderte el {fecha} a las {hora}. Si querés, elegí otro horario acá: {web}",
+
+  // Recordatorio que se manda por WhatsApp el día antes. {cuando} = "mañana" / "hoy"; {link} = link para que el cliente cancele solo.
+  mensajeRecordatorio: "Hola {nombre}! Te recordamos tu turno de {servicio} en {negocio} {cuando} a las {hora}. Si no podés venir, cancelalo acá: {link}",
 
   // ---- Modo real (Firebase). Vacío = modo demo: los datos se guardan solo en este dispositivo.
   firebase: {},                     // pegar acá la configuración web de Firebase (ver SETUP-FIREBASE.md)

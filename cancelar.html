@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Cancelar turno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="estilo.css?v=9">
+<script src="negocio.js?v=9"></script>
+<script src="sistema.js?v=9"></script>
+<style>
+body { padding-bottom: 32px; }
+.cab-c { padding: 28px 0 4px; display: flex; flex-direction: column; gap: 6px; }
+.cab-c h1 { font-size: 2rem; font-weight: 800; }
+.cab-c a { color: inherit; text-decoration: none; }
+.cuerpo-cancelar { margin-top: 14px; }
+.cuerpo-cancelar h2 { font-size: 1.4rem; }
+.cuerpo-cancelar .acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.cuerpo-cancelar .acc .btn { flex: 1 1 auto; }
+.confirmar { background: color-mix(in srgb, var(--cerrado) 8%, var(--sup)); border-color: color-mix(in srgb, var(--cerrado) 35%, var(--linea)); }
+.listo .check.no { background: var(--suave); }
+</style>
+</head>
+<body>
+<div class="demo" id="demo" hidden>Página de ejemplo · los datos son inventados</div>
+<main class="wrap">
+  <header class="cab-c">
+    <span class="etiqueta">Tu turno</span>
+    <h1><a id="nombre" href="index.html"></a></h1>
+  </header>
+  <div class="card cuerpo-cancelar" id="cuerpo" aria-live="polite"><p class="suave" style="margin:0">Buscando tu turno…</p></div>
+</main>
+
+<script>
+const N = NEGOCIO, U = Turnos.U, $ = (id) => document.getElementById(id), el = U.el;
+const r = document.documentElement.style;
+r.setProperty("--acento", N.colores.acento); r.setProperty("--fondo", N.colores.fondo); r.setProperty("--tinta", N.colores.tinta);
+document.title = "Cancelar turno · " + N.nombre;
+$("nombre").textContent = N.nombre;
+$("demo").hidden = !N.demo;
+
+let T = null, turno = null;
+const id = new URLSearchParams(location.search).get("t");
+const mostrar = (...kids) => $("cuerpo").replaceChildren(...kids);
+const reservar = () => el("a", { class: "btn pri", href: "index.html#reservar", text: "Reservar otro horario" });
+const whatsapp = () => el("a", { class: "btn sec", href: U.wa(N.whatsapp, "Hola " + N.nombre + ", tengo una consulta sobre mi turno."), target: "_blank", rel: "noopener", text: "Escribinos por WhatsApp" });
+
+function aviso(titulo, texto, ...botones) {
+  mostrar(el("h2", { text: titulo }), el("p", { class: "suave", style: "margin:0", text: texto }), el("div", { class: "acc" }, ...botones));
+}
+
+function pantallaTurno() {
+  const p = U.estilista(turno.estilista);
+  const datos = [["Servicio", turno.servicio], ["Día", U.fechaLarga(turno.fecha)], ["Hora", turno.hora]];
+  if (N.equipo.length > 1) datos.push(["Con", p.nombre]);
+  mostrar(
+    el("h2", { text: "Tu turno" }),
+    el("div", { class: "horas" }, ...datos.flatMap(([k, v]) => [el("span", { class: "suave", text: k }), el("b", { text: v })])),
+    el("p", { class: "aviso", text: "Si no vas a poder venir, cancelalo así le dejás el lugar a otra persona." }),
+    el("button", { class: "btn peligro", type: "button", text: "Cancelar mi turno", onclick: pantallaConfirmar }),
+    el("a", { class: "btn sec", href: "index.html", text: "No, lo mantengo" }));
+}
+function pantallaConfirmar() {
+  mostrar(
+    el("h2", { text: "Tu turno" }),
+    el("p", { style: "margin:0", text: turno.servicio + ", " + U.fechaCorta(turno.fecha) + " a las " + turno.hora + "." }),
+    el("div", { class: "card confirmar", role: "alert" },
+      el("b", { text: "¿Seguro que querés cancelarlo?" }),
+      el("p", { class: "aviso", text: "Después podés reservar otro horario cuando quieras." }),
+      el("div", { class: "acc" },
+        el("button", { class: "btn peligro", type: "button", id: "siCancelar", text: "Sí, cancelar mi turno", onclick: cancelarAhora }),
+        el("button", { class: "btn sec", type: "button", text: "No, lo mantengo", onclick: pantallaTurno }))));
+}
+async function cancelarAhora() {
+  const b = $("siCancelar"); b.disabled = true; b.textContent = "Cancelando…";
+  try {
+    await T.cancelarPorCliente(id);
+    mostrar(el("div", { class: "listo", style: "display:flex;flex-direction:column;gap:14px;align-items:flex-start" },
+      el("span", { class: "check", "aria-hidden": "true", text: "✓" }),
+      el("h2", { text: "Listo, tu turno quedó cancelado" }),
+      el("p", { class: "suave", style: "margin:0", text: "Gracias por avisar. El horario quedó libre para otra persona." }),
+      reservar()));
+  } catch (e) {
+    if (e.message === "yacancelado") return aviso("Este turno ya estaba cancelado", "No hace falta que hagas nada más.", reservar());
+    if (e.message === "noexiste") return noExiste();
+    b.disabled = false; b.textContent = "Sí, cancelar mi turno";
+    $("cuerpo").append(el("p", { class: "error", role: "alert", text: "No se pudo cancelar. Revisá tu conexión y probá de nuevo." }));
+  }
+}
+function noExiste() {
+  aviso("No encontramos este turno",
+    "Revisá que el link esté completo: si lo copiaste de un mensaje, puede que se haya cortado." + (T && T.modo === "demo" ? " (En el modo demo los turnos solo existen en el dispositivo donde se reservaron.)" : ""),
+    reservar(), whatsapp());
+}
+
+(async () => {
+  try {
+    T = await Turnos.conectar();
+    if (!id) return noExiste();
+    turno = await T.turno(id);
+  } catch (e) {
+    return aviso("No se pudo cargar tu turno", "Revisá tu conexión y probá de nuevo.", el("button", { class: "btn pri", type: "button", text: "Reintentar", onclick: () => location.reload() }), whatsapp());
+  }
+  if (!turno || Turnos.esBloqueo(turno)) return noExiste();
+  if (turno.estado === "cancelado") return aviso("Este turno ya estaba cancelado", "No hace falta que hagas nada más.", reservar());
+  if (new Date(turno.fecha + "T" + turno.hora + ":00") < new Date()) return aviso("Este turno ya pasó", "Ya no se puede cancelar. Si querés, reservá uno nuevo.", reservar());
+  pantallaTurno();
+})();
+</script>
+</body>
+</html>

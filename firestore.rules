@@ -35,26 +35,43 @@ service cloud.firestore {
 
       // Bloques de 15 min ocupados. Públicos pero SIN datos personales.
       // Solo se pueden crear (nunca pisar): si el horario ya está tomado, la reserva falla.
+      // El peluquero también los crea para los turnos cargados a mano y los bloqueos, aunque el día esté cerrado a reservas.
       match /ocupados/{id} {
         allow read: if true;
         allow create: if request.resource.data.keys().hasOnly(['fecha', 'estilista', 'turno'])
           && request.resource.data.fecha is string
           && id.matches(request.resource.data.fecha + '_.*')
-          && !diaCerrado(n, request.resource.data.fecha)
+          && (admin() || !diaCerrado(n, request.resource.data.fecha))
           && existsAfter(/databases/$(database)/documents/negocios/$(n)/turnos/$(request.resource.data.turno));
-        allow delete: if admin();
+        // Los libera el peluquero, o cualquiera cuando el turno al que pertenecen quedó cancelado en la misma operación
+        // (así el cliente que cancela con su link libera el horario).
+        allow delete: if admin()
+          || getAfter(/databases/$(database)/documents/negocios/$(n)/turnos/$(resource.data.turno)).data.estado == 'cancelado';
       }
 
-      // Turnos con nombre y celular: los ve y cambia solo el peluquero.
-      // Cualquiera puede crear uno, siempre junto con sus bloques ocupados.
+      // Turnos con nombre y celular.
+      //  - get (leer UN turno): cualquiera que conozca su id. El id lo genera Firestore (20 caracteres al azar) y
+      //    hace de secreto del link de cancelación. list (listar/buscar): solo el peluquero.
+      //  - create: el peluquero con cualquier campo (origen "panel", bloqueos con tipo "bloqueo"…); el público solo
+      //    una reserva común, siempre junto con sus bloques ocupados.
+      //  - update: el peluquero libremente; el público SOLO para cancelar un turno confirmado
+      //    (cambia únicamente estado -> "cancelado" y canceladoPor -> "cliente").
       match /turnos/{id} {
-        allow read, update, delete: if admin();
-        allow create: if request.resource.data.keys().hasOnly(['fecha', 'hora', 'minutos', 'servicio', 'estilista', 'nombre', 'celular', 'estado', 'bloques', 'creado'])
+        allow get: if true;
+        allow list, delete: if admin();
+        allow create: if admin() || (
+          request.resource.data.keys().hasOnly(['fecha', 'hora', 'minutos', 'servicio', 'estilista', 'nombre', 'celular', 'estado', 'bloques', 'creado'])
           && request.resource.data.estado == 'confirmado'
           && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
           && request.resource.data.celular is string && request.resource.data.celular.size() <= 20
           && request.resource.data.bloques is list && request.resource.data.bloques.size() > 0 && request.resource.data.bloques.size() <= 12
-          && existsAfter(/databases/$(database)/documents/negocios/$(n)/ocupados/$(request.resource.data.bloques[0]));
+          && existsAfter(/databases/$(database)/documents/negocios/$(n)/ocupados/$(request.resource.data.bloques[0])));
+        allow update: if admin() || (
+          resource.data.estado == 'confirmado'
+          && !('tipo' in resource.data)
+          && request.resource.data.estado == 'cancelado'
+          && request.resource.data.canceladoPor == 'cliente'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'canceladoPor']));
       }
     }
   }

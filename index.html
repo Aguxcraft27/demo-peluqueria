@@ -8,9 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="estilo.css?v=8">
-<script src="negocio.js?v=8"></script>
-<script src="sistema.js?v=8"></script>
+<link rel="stylesheet" href="estilo.css?v=9">
+<script src="negocio.js?v=9"></script>
+<script src="sistema.js?v=9"></script>
+<link rel="icon" type="image/svg+xml" href="icono.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
 <div class="demo" id="demo" hidden>Página de ejemplo · los datos son inventados</div>
@@ -61,14 +63,16 @@
       <p class="error" id="fError" role="alert" hidden></p>
       <button class="btn pri" id="fOk" type="button">Confirmar turno</button>
       <p class="aviso" id="modoAviso"></p>
+      <p class="aviso">Tu nombre y celular se usan solo para tu turno y para avisarte si hay un cambio. No se comparten con nadie.</p>
     </div>
     <div class="card listo" id="confirmado" hidden>
       <span class="check" aria-hidden="true">✓</span>
       <h2>¡Turno confirmado!</h2>
       <p id="cResumen" style="margin:0"></p>
-      <p class="aviso">Si no podés venir, avisanos por WhatsApp así le dejás el lugar a otra persona.</p>
-      <a class="btn sec" id="cWa" target="_blank" rel="noopener">Avisar por WhatsApp</a>
+      <p class="aviso">Si no podés venir, <a class="txt-link" id="cCancel">cancelalo acá</a> así le dejás el lugar a otra persona. Guardá este link: es la forma de cancelar tu turno.</p>
+      <button class="btn sec" id="cCopiar" type="button">Copiar link para cancelar</button>
       <button class="btn sec" id="cOtro" type="button">Reservar otro turno</button>
+      <p class="aviso">¿Algún problema? <a class="txt-link" id="cWa" target="_blank" rel="noopener">Escribinos por WhatsApp</a></p>
     </div>
   </section>
 
@@ -209,10 +213,17 @@ $("fOk").addEventListener("click", async () => {
     nombre, celular: U.normalizarCel(cel), estado: "confirmado", bloques: Turnos.idsBloques(sel.fecha, sel.est, sel.hora, s.minutos) };
   $("fOk").disabled = true; $("fOk").textContent = "Reservando…";
   try {
-    await T.reservar(t);
+    const idTurno = await T.reservar(t);
+    const linkCancel = new URL("cancelar.html?t=" + encodeURIComponent(idTurno), location.href).href;
+    $("cCancel").href = linkCancel;
+    $("cCopiar").textContent = "Copiar link para cancelar";
+    $("cCopiar").onclick = async () => {
+      try { await navigator.clipboard.writeText(linkCancel); $("cCopiar").textContent = "✓ Link copiado"; }
+      catch (e) { $("cCopiar").textContent = "No se pudo copiar: tocá “cancelalo acá” y guardá esa página"; }
+    };
     const p = U.estilista(t.estilista);
     $("cResumen").textContent = s.nombre + (N.equipo.length > 1 ? " con " + p.nombre : "") + ", el " + U.fechaCorta(t.fecha) + " a las " + t.hora + ".";
-    $("cWa").href = U.wa(N.whatsapp, "Hola, soy " + nombre + ". Tenía turno el " + U.fechaCorta(t.fecha) + " a las " + t.hora + " y no voy a poder ir.");
+    $("cWa").href = U.wa(N.whatsapp, "Hola, soy " + nombre + ". Tengo turno el " + U.fechaCorta(t.fecha) + " a las " + t.hora + " y quería consultarte algo.");
     $("reserva").hidden = true; $("confirmado").hidden = false;
     $("confirmado").scrollIntoView({ block: "center" });
   } catch (e) {

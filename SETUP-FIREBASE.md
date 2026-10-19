@@ -25,9 +25,10 @@ La `apiKey` de Firebase no es secreta, puede estar en la página. Lo que protege
 Cada peluquería usa su propio `id` en `negocio.js`, y sus datos quedan separados en `negocios/<id>`. Se puede usar el mismo proyecto de Firebase para varias: hay que sumar el email de cada peluquero en `admins()` de las reglas. Si son muchas, conviene un proyecto por cliente.
 
 ## Qué protege y qué no
-- Nadie de afuera puede ver nombres ni celulares de los clientes: solo el peluquero logueado.
+- Nadie de afuera puede ver la lista de turnos, nombres ni celulares de los clientes: solo el peluquero logueado (la única excepción es el link de cancelación de cada turno, ver más abajo).
 - Dos personas no pueden reservar el mismo horario, porque la base rechaza el segundo intento.
 - Nadie puede reservar un día que el peluquero cerró, sea ese día puntual o todos los jueves (cierre semanal). Las reglas calculan el día de la semana a partir de la fecha.
+- **El link de cancelación es privado del cliente.** Cada turno tiene un id al azar de 20 caracteres que genera Firestore, y ese id va en el link `cancelar.html?t=<id>`. Las reglas dejan leer un turno suelto (`get`) a quien conoce el id, pero nadie puede listar ni buscar turnos. Con el link se puede **solamente** cancelar ese turno (cambiar `estado` de "confirmado" a "cancelado" y `canceladoPor` a "cliente", y liberar sus horarios); nada más. Consecuencia: quien tenga el link puede ver el nombre y el celular de ese turno y cancelarlo, así que pedile al cliente que no lo comparta. Los turnos cargados a mano y los bloqueos también tienen id, pero el link solo se arma para los que reservó el cliente o recibe en el recordatorio.
 - **Límite:** alguien con malas intenciones podría llenar la agenda con turnos falsos. Para un comercio chico es poco probable. Si pasa, se cancelan desde el panel y se puede agregar un captcha.
 - **Datos personales (Ley 18.331):** los nombres y celulares son de los clientes de la peluquería. Usalos solo para los turnos.
 
@@ -39,3 +40,10 @@ El peluquero cambia los días y horarios desde el panel, en **Horario** (como el
 
 ## Mensaje de cancelación
 Se edita en `negocio.js` → `mensajeCancelacion`. Desde el panel, "Avisar por WhatsApp" abre el chat de cada cliente con el mensaje escrito. Si el peluquero prefiere tener también un `/cancelar` en WhatsApp Business, puede crear una respuesta rápida con el mismo texto.
+
+## Turnos a mano, bloqueos y recordatorios
+- **Agregar turno** (clientes que llaman o van al local): el peluquero lo carga desde el panel. Se guarda en `turnos` con `origen: "panel"` y ocupa sus bloques en `ocupados` igual que una reserva online, así nunca se superpone con otro.
+- **Bloquear horario** (médico, trámites): se guarda como un documento de `turnos` con `tipo: "bloqueo"` (uno por estilista) más sus bloques en `ocupados`. La reserva pública deja de ofrecer esas horas. "Quitar bloqueo" borra el documento y libera los bloques. No cuentan como turnos.
+- **Recordatorios:** el panel arma el WhatsApp con `mensajeRecordatorio` de `negocio.js` (se puede editar) y marca `recordado: true` en el turno.
+- **Cancelar solo:** el cliente recibe el link `cancelar.html?t=<id>` al reservar y en el recordatorio. Para que el link del recordatorio funcione, `web` en `negocio.js` tiene que ser la dirección real de la página.
+- Si actualizás una instalación vieja, volvé a pegar todo `firestore.rules`: hay reglas nuevas para leer un turno por su id, cancelar con el link y crear turnos/bloqueos desde el panel.

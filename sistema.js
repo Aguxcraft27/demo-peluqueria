@@ -107,6 +107,22 @@
     return N.mensajeCancelacion.replace("{nombre}", t.nombre).replace("{negocio}", N.nombre)
       .replace("{fecha}", fechaCorta(t.fecha)).replace("{hora}", t.hora).replace("{web}", N.web + "#reservar");
   }
+  const esBloqueo = (t) => !!t && t.tipo === "bloqueo";
+  // Link privado para que el cliente cancele su turno: el id del turno (20 letras al azar en Firebase) hace de secreto.
+  function linkCancelar(id) {
+    const base = N.web || new URL(".", location.href).href;
+    return base.replace(/\/?$/, "/") + "cancelar.html?t=" + encodeURIComponent(id);
+  }
+  const rellenar = (txt, vals) => txt.replace(/\{(\w+)\}/g, (m, k) => (k in vals ? vals[k] : m));
+  const RECORDATORIO_BASE = "Hola {nombre}! Te recordamos tu turno de {servicio} en {negocio} {cuando} a las {hora}. Si no podés venir, cancelalo acá: {link}";
+  function mensajeRecordatorio(t) {
+    const hoy = hoyIso();
+    const cuando = t.fecha === hoy ? "hoy" : t.fecha === sumarDias(hoy, 1) ? "mañana" : "el " + fechaCorta(t.fecha);
+    return rellenar(N.mensajeRecordatorio || RECORDATORIO_BASE, { nombre: t.nombre, servicio: t.servicio, negocio: N.nombre, cuando, hora: t.hora, link: linkCancelar(t.id) });
+  }
+  // Documentos de bloqueo (uno por estilista): ocupan los bloques de 15 min pero no son turnos de clientes.
+  const docsBloqueo = (p) => p.estilistas.map(e => ({ fecha: p.fecha, hora: p.hora, minutos: p.minutos, servicio: "Bloqueo", estilista: e,
+    nombre: "Bloqueo", celular: "", estado: "confirmado", tipo: "bloqueo", motivo: p.motivo || "", bloques: idsBloques(p.fecha, e, p.hora, p.minutos) }));
 
   /* ---------- Modo demo (este dispositivo) ---------- */
   function backendDemo() {
@@ -116,8 +132,8 @@
     const guardar = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
     const fresco = () => { db = leer() || db; aplicarHorario(db.dias); return db; };
 
-    function reservarSync(t) {
-      if (!abiertoDia(t.fecha, db.dias)) throw new Error("cerrado");
+    function reservarSync(t, sinCierre) {
+      if (!sinCierre && !abiertoDia(t.fecha, db.dias)) throw new Error("cerrado");
       if (t.bloques.some(id => db.ocupados[id])) throw new Error("ocupado");
       const id = "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       db.turnos[id] = { ...t, creado: new Date().toISOString() };
@@ -153,6 +169,30 @@
       async dias() { return { ...fresco().dias }; },
       async ocupados(f) { return new Set(Object.keys(fresco().ocupados).filter(k => k.startsWith(f + "_"))); },
       async reservar(t) { fresco(); const id = reservarSync(t); guardar(); return id; },
+      // Turno cargado a mano por el peluquero: ignora el cierre de reservas, pero nunca pisa otro turno.
+      async crearTurnoPanel(t) { fresco(); const id = reservarSync({ ...t, origen: "panel" }, true); guardar(); return id; },
+      async bloquear(p) {
+        fresco(); const docs = docsBloqueo(p);
+        if (docs.some(d => d.bloques.some(b => db.ocupados[b]))) throw new Error("ocupado");
+        docs.forEach(d => {
+          const id = "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          db.turnos[id] = { ...d, creado: new Date().toISOString() }; d.bloques.forEach(b => { db.ocupados[b] = id; });
+        });
+        guardar();
+      },
+      async quitarBloqueo(t) {
+        fresco(); const x = db.turnos[t.id]; if (!x) return;
+        (x.bloques || []).forEach(b => { if (db.ocupados[b] === t.id) delete db.ocupados[b]; }); delete db.turnos[t.id]; guardar();
+      },
+      async turno(id) { const x = fresco().turnos[id]; return x ? { id, ...x } : null; },
+      async cancelarPorCliente(id) {
+        fresco(); const x = db.turnos[id];
+        if (!x || esBloqueo(x)) throw new Error("noexiste");
+        if (x.estado !== "confirmado") throw new Error("yacancelado");
+        x.estado = "cancelado"; x.canceladoPor = "cliente";
+        (x.bloques || []).forEach(b => { if (db.ocupados[b] === id) delete db.ocupados[b]; }); guardar();
+      },
+      async marcarRecordado(id) { fresco(); if (db.turnos[id]) db.turnos[id].recordado = true; guardar(); },
       async turnos(desde, hasta) {
         return Object.entries(fresco().turnos).map(([id, t]) => ({ id, ...t })).filter(t => t.fecha >= desde && t.fecha <= hasta);
       },
@@ -166,7 +206,7 @@
       },
       async cancelar(t) {
         fresco(); const x = db.turnos[t.id]; if (!x) return;
-        x.estado = "cancelado"; (x.bloques || []).forEach(b => { if (db.ocupados[b] === t.id) delete db.ocupados[b]; }); guardar();
+        x.estado = "cancelado"; x.canceladoPor = "peluquero"; (x.bloques || []).forEach(b => { if (db.ocupados[b] === t.id) delete db.ocupados[b]; }); guardar();
       },
       async marcarAvisado(id) { fresco(); if (db.turnos[id]) db.turnos[id].avisado = true; guardar(); },
       async reiniciar() { db = { turnos: {}, ocupados: {}, dias: {} }; aplicarHorario(db.dias); sembrar(); guardar(); },
@@ -207,6 +247,46 @@
         try { await b.commit(); } catch (e) { throw new Error(e.code === "permission-denied" ? "ocupado" : "red"); }
         return ref.id;
       },
+      // Turno cargado a mano por el peluquero (con su sesión iniciada): mismo mecanismo de bloques, nunca pisa otro turno.
+      async crearTurnoPanel(t) {
+        const b = F.writeBatch(fs), ref = F.doc(col("turnos"));
+        b.set(ref, { ...t, origen: "panel", creado: F.serverTimestamp() });
+        t.bloques.forEach(id => b.set(F.doc(col("ocupados"), id), { fecha: t.fecha, estilista: t.estilista, turno: ref.id }));
+        try { await b.commit(); } catch (e) { throw new Error(e.code === "permission-denied" ? "ocupado" : "red"); }
+        return ref.id;
+      },
+      async bloquear(p) {
+        const b = F.writeBatch(fs);
+        docsBloqueo(p).forEach(d => {
+          const ref = F.doc(col("turnos"));
+          b.set(ref, { ...d, creado: F.serverTimestamp() });
+          d.bloques.forEach(id => b.set(F.doc(col("ocupados"), id), { fecha: d.fecha, estilista: d.estilista, turno: ref.id }));
+        });
+        try { await b.commit(); } catch (e) { throw new Error(e.code === "permission-denied" ? "ocupado" : "red"); }
+      },
+      async quitarBloqueo(t) {
+        const b = F.writeBatch(fs);
+        b.delete(F.doc(col("turnos"), t.id));
+        (t.bloques || []).forEach(id => b.delete(F.doc(col("ocupados"), id)));
+        await b.commit();
+      },
+      // Lectura de un turno por su id (lo usa cancelar.html). Las reglas lo permiten solo a quien conoce el id.
+      async turno(id) {
+        const s = await F.getDoc(F.doc(col("turnos"), id));
+        return s.exists() ? { id: s.id, ...s.data() } : null;
+      },
+      // El cliente cancela su turno con el link: solo cambia estado/canceladoPor y libera sus bloques.
+      async cancelarPorCliente(id) {
+        let t;
+        try { t = await this.turno(id); } catch (e) { throw new Error("red"); }
+        if (!t || esBloqueo(t)) throw new Error("noexiste");
+        if (t.estado !== "confirmado") throw new Error("yacancelado");
+        const b = F.writeBatch(fs);
+        b.update(F.doc(col("turnos"), id), { estado: "cancelado", canceladoPor: "cliente" });
+        (t.bloques || []).forEach(x => b.delete(F.doc(col("ocupados"), x)));
+        try { await b.commit(); } catch (e) { throw new Error(e.code === "permission-denied" ? "yacancelado" : "red"); }
+      },
+      async marcarRecordado(id) { await F.updateDoc(F.doc(col("turnos"), id), { recordado: true }); },
       async turnos(desde, hasta) {
         const s = await rango("turnos", "fecha", desde, hasta);
         return s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -225,7 +305,7 @@
       },
       async cancelar(t) {
         const b = F.writeBatch(fs);
-        b.update(F.doc(col("turnos"), t.id), { estado: "cancelado" });
+        b.update(F.doc(col("turnos"), t.id), { estado: "cancelado", canceladoPor: "peluquero" });
         (t.bloques || []).forEach(id => b.delete(F.doc(col("ocupados"), id)));
         await b.commit();
       },
@@ -238,7 +318,7 @@
 
   window.Turnos = {
     conectar: () => (N.firebase && N.firebase.apiKey ? backendFirebase() : Promise.resolve(backendDemo())),
-    abiertoDia, idSemana, tramosDe, tramosDeDow, aplicarHorario, horariosLibres, idsBloques, bloquesDe, mensajeCancelacion,
+    abiertoDia, idSemana, tramosDe, tramosDeDow, aplicarHorario, horariosLibres, idsBloques, bloquesDe, mensajeCancelacion, mensajeRecordatorio, linkCancelar, esBloqueo,
     U: { aMin, aHora, iso, hoyIso, fechaDe, sumarDias, fechaCorta, fechaLarga, money, estilista, normalizarCel, celValido, wa, el, DIAS }
   };
 })();

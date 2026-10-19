@@ -94,3 +94,7 @@ footer { padding: 32px 0 16px; text-align: center; font-size: .8rem; color: var(
 .barra .wrap { display: flex; gap: 10px; padding: 0; }
 .barra .btn { flex: 1; }
 svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* Link de texto dentro de un párrafo */
+.txt-link { color: var(--acento); font-weight: 600; }
+.cuerpo-cancelar .horas { margin: 4px 0; }
