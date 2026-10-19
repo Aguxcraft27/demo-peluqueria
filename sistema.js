@@ -47,11 +47,18 @@
 
   /* ---------- Reglas de agenda ---------- */
   const tramosDe = (f) => N.horarios[fechaDe(f).getDay()] || [];
-  // dias = { "2026-10-20": { abierto: false } } -> el peluquero lo cerró a mano
+  // dias = datos de la colección "dias":
+  //   "2026-10-22": { abierto: false }  -> cierre (o apertura) puntual de una fecha
+  //   "semana-4":   { abierto: false }  -> cierre semanal: todos los jueves (0 = domingo … 6 = sábado)
+  // Prioridad: fecha pasada o sin horario = cerrado; si hay dato de esa fecha manda ese
+  // (así se puede abrir un jueves puntual aunque los jueves estén cerrados); si no, manda el cierre semanal.
+  const idSemana = (dow) => "semana-" + dow;
   function abiertoDia(f, dias) {
     if (f < hoyIso() || !tramosDe(f).length) return false;
     const o = dias && dias[f];
-    return o ? o.abierto !== false : true;
+    if (o) return o.abierto !== false;
+    const s = dias && dias[idSemana(fechaDe(f).getDay())];
+    return !(s && s.abierto === false);
   }
   function bloquesDe(hora, minutos) {
     const a = aMin(hora), out = [];
@@ -127,7 +134,8 @@
       async turnos(desde, hasta) {
         return Object.entries(fresco().turnos).map(([id, t]) => ({ id, ...t })).filter(t => t.fecha >= desde && t.fecha <= hasta);
       },
-      async setDia(f, abierto) { fresco().dias[f] = { abierto }; guardar(); },
+      async setDia(id, abierto) { fresco().dias[id] = { abierto }; guardar(); },
+      async borrarDia(id) { delete fresco().dias[id]; guardar(); },
       async cancelar(t) {
         fresco(); const x = db.turnos[t.id]; if (!x) return;
         x.estado = "cancelado"; (x.bloques || []).forEach(b => { if (db.ocupados[b] === t.id) delete db.ocupados[b]; }); guardar();
@@ -148,8 +156,13 @@
     return {
       modo: "real",
       async dias(desde, hasta) {
-        const s = await rango("dias", F.documentId(), desde, hasta), out = {};
-        s.forEach(d => { out[d.id] = d.data(); });
+        // Dos lecturas: las fechas del rango y los 7 cierres semanales ("semana-0" … "semana-6"),
+        // que por su nombre quedan fuera del rango de fechas.
+        const [fechas, semana] = await Promise.all([
+          rango("dias", F.documentId(), desde, hasta), rango("dias", F.documentId(), idSemana(0), idSemana(6))]);
+        const out = {};
+        fechas.forEach(d => { out[d.id] = d.data(); });
+        semana.forEach(d => { out[d.id] = d.data(); });
         return out;
       },
       async ocupados(f) {
@@ -167,7 +180,8 @@
         const s = await rango("turnos", "fecha", desde, hasta);
         return s.docs.map(d => ({ id: d.id, ...d.data() }));
       },
-      async setDia(f, abierto) { await F.setDoc(F.doc(col("dias"), f), { abierto }); },
+      async setDia(id, abierto) { await F.setDoc(F.doc(col("dias"), id), { abierto }); },
+      async borrarDia(id) { await F.deleteDoc(F.doc(col("dias"), id)); },
       async cancelar(t) {
         const b = F.writeBatch(fs);
         b.update(F.doc(col("turnos"), t.id), { estado: "cancelado" });
@@ -183,7 +197,7 @@
 
   window.Turnos = {
     conectar: () => (N.firebase && N.firebase.apiKey ? backendFirebase() : Promise.resolve(backendDemo())),
-    abiertoDia, tramosDe, horariosLibres, idsBloques, bloquesDe, mensajeCancelacion,
+    abiertoDia, idSemana, tramosDe, horariosLibres, idsBloques, bloquesDe, mensajeCancelacion,
     U: { aMin, aHora, iso, hoyIso, fechaDe, sumarDias, fechaCorta, fechaLarga, money, estilista, normalizarCel, celValido, wa, el, DIAS }
   };
 })();

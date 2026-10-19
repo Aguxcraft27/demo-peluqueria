@@ -6,13 +6,27 @@ service cloud.firestore {
     function admin() {
       return request.auth != null && request.auth.token.email in ['peluquero@ejemplo.com'];
     }
+    // Día de la semana (0 = domingo … 6 = sábado) de un string 'YYYY-MM-DD'.
+    // Se arma la fecha con timestamp.date(), se pasa a milisegundos y se divide por 86400000
+    // para tener los días desde el 1/1/1970, que fue jueves (4). Sumamos 4 y tomamos el resto de dividir por 7.
+    function diaDeSemana(fecha) {
+      let p = fecha.split('-');
+      let dias = int(timestamp.date(int(p[0]), int(p[1]), int(p[2])).toMillis() / 86400000);
+      return (4 + dias) % 7;
+    }
+    // Un día está cerrado si:
+    //  - hay un dato de esa fecha con abierto == false, o
+    //  - no hay dato de esa fecha y el día de la semana está cerrado ("semana-N" con abierto == false).
+    // Si hay un dato de la fecha con abierto == true, manda ese (se abre un jueves puntual aunque los jueves estén cerrados).
     function diaCerrado(n, fecha) {
       return exists(/databases/$(database)/documents/negocios/$(n)/dias/$(fecha))
-        && get(/databases/$(database)/documents/negocios/$(n)/dias/$(fecha)).data.abierto == false;
+        ? get(/databases/$(database)/documents/negocios/$(n)/dias/$(fecha)).data.abierto == false
+        : (exists(/databases/$(database)/documents/negocios/$(n)/dias/$('semana-' + string(diaDeSemana(fecha))))
+          && get(/databases/$(database)/documents/negocios/$(n)/dias/$('semana-' + string(diaDeSemana(fecha)))).data.abierto == false);
     }
 
     match /negocios/{n} {
-      // Días cerrados a mano: los ve cualquiera, los cambia solo el peluquero.
+      // Días cerrados a mano (por fecha, o por día de la semana con ids semana-0 … semana-6): los ve cualquiera, los cambia solo el peluquero.
       match /dias/{fecha} {
         allow read: if true;
         allow write: if admin();

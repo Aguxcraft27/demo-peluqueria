@@ -52,6 +52,17 @@ body { padding-bottom: 32px; }
 .resumen b { color: var(--tinta); font-family: var(--display); font-size: 1.3rem; display: block; }
 .confirmar { background: color-mix(in srgb, var(--cerrado) 8%, var(--sup)); border-color: color-mix(in srgb, var(--cerrado) 35%, var(--linea)); }
 .confirmar .acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.confirmar .aviso { margin-top: -6px; }
+.confirmar .acc .btn { flex: 1 1 auto; }
+.cerrados summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
+.cerrados .lista-c { display: flex; flex-direction: column; margin-top: 10px; }
+.cerrados .item-c { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--linea); }
+.cerrados .item-c small { display: block; color: var(--suave); font-size: .8rem; }
+.cerrados .item-c .btn { padding: 7px 12px; font-size: .85rem; flex-shrink: 0; }
+.cerrados .atajo { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--linea); }
+.cerrados .atajo label { flex: 1; }
+.fecha-cab { font-weight: 600; font-size: .85rem; padding: 8px 14px 2px; color: var(--suave); border-top: 1px solid var(--linea); }
+.fecha-cab:first-child { border-top: 0; }
 .login { max-width: 380px; margin: 12vh auto 0; }
 .modo { background: var(--acento-suave); color: var(--tinta); border-radius: 12px; padding: 10px 14px; font-size: .85rem; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
 </style>
@@ -88,15 +99,21 @@ body { padding-bottom: 32px; }
           <div class="resumen"><span><b id="dCant">0</b>turnos</span></div>
         </div>
         <label class="switch"><span>Reservas abiertas<small id="dSwitchTxt"></small></span><input type="checkbox" role="switch" id="dSwitch"></label>
-        <div class="card confirmar" id="dPregunta" hidden>
+        <div class="card confirmar" id="dPregunta" hidden role="alert">
           <b id="dPreguntaTxt"></b>
-          <div class="acc">
-            <button class="btn peligro" id="dCerrarTodo" type="button">Cerrar y cancelar todos</button>
-            <button class="btn sec" id="dSoloCerrar" type="button">Solo cerrar reservas nuevas</button>
-            <button class="btn sec" id="dNoCerrar" type="button">Volver</button>
-          </div>
+          <p class="aviso" id="dPreguntaSub" hidden></p>
+          <div class="acc" id="dPreguntaAcc"></div>
         </div>
       </div>
+
+      <details class="card cerrados" id="cerrados">
+        <summary id="cerrSum">Días cerrados</summary>
+        <div class="lista-c" id="cerrLista"></div>
+        <div class="atajo" id="cerrAtajo">
+          <label>Cerrar para siempre<select id="cerrDow"></select></label>
+          <button class="btn sec" id="cerrBtn" type="button">Cerrar siempre</button>
+        </div>
+      </details>
 
       <div class="cancelados" id="cancelados" hidden>
         <h2 style="font-size:1.25rem">Cancelados: avisá a cada uno</h2>
@@ -121,11 +138,28 @@ $("pNombre").textContent = N.nombre; $("lNombre").textContent = N.nombre;
 $("verWeb").href = "index.html";
 
 let T = null, turnos = [], diasMap = {}, dia = U.hoyIso(), filtro = "", confirmando = null;
+// pregunta = cuadro "¿Solo ese día o siempre?": { tipo: "cerrar" | "cancelar" | "abrir", paso: "alcance" | "turnos", ref: fecha o null, dow: 0..6, alcance }
+let pregunta = null;
 const DESDE = () => U.sumarDias(U.hoyIso(), -1), HASTA = () => U.sumarDias(U.hoyIso(), (N.diasParaReservar || 14) + 7);
 
 function toast(msg) { alert(msg); }
-const delDia = () => turnos.filter(t => t.fecha === dia);
 const confirmadosDe = (f) => turnos.filter(t => t.fecha === f && t.estado === "confirmado");
+/* ---- Días de la semana (cierres semanales) ---- */
+const dowDe = (f) => U.fechaDe(f).getDay();
+const esFecha = (k) => /^\d{4}-\d{2}-\d{2}$/.test(k);
+const cerradoSemana = (d) => { const x = diasMap[Turnos.idSemana(d)]; return !!x && x.abierto === false; };
+const todosLos = (d) => "todos los " + U.DIAS[d].toLowerCase() + (d === 0 || d === 6 ? "s" : "");   // "todos los jueves"
+const mayus = (t) => t[0].toUpperCase() + t.slice(1);
+// Turnos confirmados de hoy en adelante que caen en ese día de la semana
+const turnosDeSemana = (d) => turnos.filter(t => t.estado === "confirmado" && t.fecha >= U.hoyIso() && dowDe(t.fecha) === d);
+const fechasConDato = (d) => Object.keys(diasMap).filter(k => esFecha(k) && k >= U.hoyIso() && dowDe(k) === d);
+const listaDe = (alcance, p) => alcance === "dia" ? confirmadosDe(p.ref) : turnosDeSemana(p.dow);
+// "jueves 22/10 (2), jueves 29/10 (1)"
+function resumenTurnos(lista) {
+  const por = {}; lista.forEach(t => { por[t.fecha] = (por[t.fecha] || 0) + 1; });
+  return Object.keys(por).sort().map(f => U.fechaCorta(f) + " (" + por[f] + ")").join(", ");
+}
+const nTurnos = (n) => n + (n === 1 ? " turno" : " turnos");
 
 async function recargar() {
   try { [turnos, diasMap] = await Promise.all([T.turnos(DESDE(), HASTA()), T.dias(DESDE(), HASTA())]); pintar(); }
@@ -140,7 +174,7 @@ function pintarTira() {
     const d = U.fechaDe(f), n = confirmadosDe(f).length, abierto = Turnos.abiertoDia(f, diasMap);
     return el("button", { type: "button", class: "dia" + (f === dia ? " on" : "") + (abierto ? "" : " cerrado"), "aria-pressed": String(f === dia),
       "aria-label": U.fechaLarga(f) + ", " + n + " turnos" + (abierto ? "" : ", cerrado"),
-      onclick: () => { dia = f; confirmando = null; pintar(); } },
+      onclick: () => { dia = f; confirmando = null; pregunta = null; pintar(); } },
       el("small", { text: f === U.hoyIso() ? "Hoy" : DIAS3[d.getDay()] }), el("b", { text: String(d.getDate()) }),
       el("span", { class: "n", text: abierto ? (n ? n + " t" : "·") : "cerr." }));
   }));
@@ -153,12 +187,13 @@ function pintarDia() {
   $("dCant").textContent = conf.length;
   $("dSwitch").checked = abierto;
   $("dSwitch").disabled = !tramos.length;
-  $("dSwitchTxt").textContent = !tramos.length ? "Cerrado por horario" : abierto ? "Los clientes pueden reservar este día" : "Nadie puede reservar este día";
-  $("dPregunta").hidden = confirmando !== "cerrar";
-  $("dPreguntaTxt").textContent = "Hay " + conf.length + (conf.length === 1 ? " turno" : " turnos") + " ese día. ¿Qué hacemos?";
+  const dow = dowDe(dia), ov = diasMap[dia], sem = cerradoSemana(dow);
+  $("dSwitchTxt").textContent = !tramos.length ? "Cerrado por horario"
+    : abierto ? (sem && ov ? "Abierto solo este día: " + todosLos(dow) + " están cerrados" : "Los clientes pueden reservar este día")
+    : sem ? "Cerrado " + todosLos(dow) : "Nadie puede reservar este día";
+  pintarPregunta();
+  pintarCerrados();
   $("dCancelarDia").hidden = !conf.length;
-  $("dCancelarDia").textContent = confirmando === "cancelarDia" ? "Tocá de nuevo para confirmar: se cancelan " + conf.length + " turnos" : "Cancelar todos los turnos de este día";
-  $("dCancelarDia").className = "btn " + (confirmando === "cancelarDia" ? "peligro" : "sec");
 
   // Filtro por estilista
   $("filtros").hidden = N.equipo.length < 2;
@@ -178,10 +213,108 @@ function pintarDia() {
   lista.filter(t => !usados.has(t.id)).forEach(t => filas.push(el("div", { class: "slot" }, el("time", { text: t.hora }), el("div", {}, tarjeta(t)))));
   $("agenda").replaceChildren(...(filas.length ? filas : [el("div", { class: "slot libre" }, el("span"), el("span", { class: "vacio", text: "Cerrado por horario." }))]));
 
-  // Cancelados del día, para avisar
-  const canc = delDia().filter(t => t.estado === "cancelado" && (!filtro || t.estilista === filtro));
+  // Cancelados de hoy en adelante, agrupados por fecha, para avisar
+  const canc = turnos.filter(t => t.estado === "cancelado" && t.fecha >= U.hoyIso() && (!filtro || t.estilista === filtro))
+    .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+  const filasC = []; let ult = "";
+  canc.forEach(t => {
+    if (t.fecha !== ult) { ult = t.fecha; filasC.push(el("div", { class: "fecha-cab", text: mayus(U.fechaCorta(t.fecha)) })); }
+    filasC.push(el("div", { class: "slot" }, el("time", { text: t.hora }), el("div", {}, tarjetaCancelada(t))));
+  });
   $("cancelados").hidden = !canc.length;
-  $("cancList").replaceChildren(...canc.map(t => el("div", { class: "slot" }, el("time", { text: t.hora }), el("div", {}, tarjetaCancelada(t)))));
+  $("cancList").replaceChildren(...filasC);
+}
+
+/* ---------- Cuadro "¿Solo ese día o siempre?" ---------- */
+function preguntar(p) { pregunta = p; confirmando = null; pintarDia(); $("dPregunta").scrollIntoView({ block: "center", behavior: "smooth" }); }
+function cerrarPregunta() { pregunta = null; pintarDia(); }
+const boton = (texto, clase, fn) => el("button", { class: "btn " + clase, type: "button", text: texto, onclick: fn });
+
+function pintarPregunta() {
+  const p = pregunta, box = $("dPregunta");
+  box.hidden = !p;
+  if (!p) return;
+  const d = p.dow, sub = $("dPreguntaSub"), acc = [];
+  sub.hidden = true;
+  const solo = p.ref ? "el " + U.fechaCorta(p.ref) : "";
+  if (p.paso === "alcance") {
+    if (p.tipo === "cerrar") {
+      $("dPreguntaTxt").textContent = "¿Solo ese día o siempre?";
+      sub.textContent = "Cerrar las reservas solo " + solo + ", o " + todosLos(d) + "."; sub.hidden = false;
+      acc.push(boton("Solo " + solo, "pri", () => elegirCierre("dia", p)), boton(mayus(todosLos(d)), "sec", () => elegirCierre("semana", p)));
+    } else if (p.tipo === "cancelar") {
+      const a = confirmadosDe(p.ref).length, b = turnosDeSemana(d).length;
+      $("dPreguntaTxt").textContent = "¿Solo este día o siempre?";
+      sub.textContent = "Se cancelan los turnos y después les avisás por WhatsApp. Esto no cierra las reservas: para eso usá el interruptor."; sub.hidden = false;
+      acc.push(boton("Solo " + solo + " (" + nTurnos(a) + ")", "peligro", () => { pregunta = null; cancelar(confirmadosDe(p.ref)); }));
+      if (b > a) acc.push(boton(mayus(todosLos(d)) + " (" + nTurnos(b) + ")", "peligro", () => { pregunta = null; cancelar(turnosDeSemana(d)); }));
+    } else {
+      $("dPreguntaTxt").textContent = "Cerraste " + todosLos(d) + ". ¿Abrimos solo ese día o siempre?";
+      acc.push(boton("Abrir solo " + solo, "pri", () => abrirDia(p)), boton("Abrir " + todosLos(d), "sec", () => abrirSemana(p)));
+    }
+  } else {   // paso "turnos": hay turnos confirmados que se verían afectados
+    const lista = listaDe(p.alcance, p);
+    $("dPreguntaTxt").textContent = "Hay " + nTurnos(lista.length) + (p.alcance === "dia" ? " ese día" : " en " + todosLos(d)) + ". ¿Qué hacemos?";
+    if (p.alcance === "semana") { sub.textContent = resumenTurnos(lista); sub.hidden = false; }
+    acc.push(boton("Cerrar y cancelar todos", "peligro", () => aplicarCierre(p.alcance, p, true)),
+      boton("Solo cerrar reservas nuevas", "sec", () => aplicarCierre(p.alcance, p, false)));
+  }
+  acc.push(boton("Volver", "sec", cerrarPregunta));
+  $("dPreguntaAcc").replaceChildren(...acc);
+}
+
+function elegirCierre(alcance, p) {
+  if (listaDe(alcance, p).length) preguntar({ ...p, paso: "turnos", alcance });
+  else aplicarCierre(alcance, p, false);
+}
+async function aplicarCierre(alcance, p, cancelarTurnos) {
+  const lista = cancelarTurnos ? listaDe(alcance, p) : [];
+  pregunta = null;
+  try {
+    if (alcance === "dia") await T.setDia(p.ref, false);
+    else {
+      // "Siempre": se limpian los datos puntuales de ese día de la semana para que no queden jueves abiertos por error
+      for (const f of fechasConDato(p.dow)) await T.borrarDia(f);
+      await T.setDia(Turnos.idSemana(p.dow), false);
+    }
+    for (const t of lista) await T.cancelar(t);
+  } catch (e) { toast("No se pudo cerrar el día. Revisá la conexión."); }
+  await recargar();
+  if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
+}
+async function abrirDia(p) {
+  pregunta = null;
+  try { await T.setDia(p.ref, true); } catch (e) { toast("No se pudo abrir el día."); }
+  await recargar();
+}
+async function abrirSemana(p) {
+  pregunta = null;
+  try { await T.borrarDia(Turnos.idSemana(p.dow)); if (diasMap[p.ref]) await T.borrarDia(p.ref); } catch (e) { toast("No se pudo abrir el día."); }
+  await recargar();
+}
+async function borrar(id) {
+  try { await T.borrarDia(id); } catch (e) { toast("No se pudo reabrir. Revisá la conexión."); }
+  await recargar();
+}
+
+/* ---------- Días cerrados ---------- */
+function pintarCerrados() {
+  const semanales = [1, 2, 3, 4, 5, 6, 0].filter(cerradoSemana);
+  const puntuales = Object.keys(diasMap).filter(k => esFecha(k) && k >= U.hoyIso() && Turnos.tramosDe(k).length &&
+    (diasMap[k].abierto === false ? !cerradoSemana(dowDe(k)) : cerradoSemana(dowDe(k)))).sort();
+  const item = (titulo, nota, texto, fn) => el("div", { class: "item-c" }, el("div", {}, el("b", { text: titulo }), nota ? el("small", { text: nota }) : null), boton(texto, "sec", fn));
+  const filas = [
+    ...semanales.map(d => item(mayus(todosLos(d)), "Cierre semanal", "Reabrir", () => borrar(Turnos.idSemana(d)))),
+    ...puntuales.map(f => diasMap[f].abierto === false
+      ? item(mayus(U.fechaCorta(f)), "Cerrado solo ese día", "Reabrir", () => borrar(f))
+      : item(mayus(U.fechaCorta(f)), "Abierto solo ese día", "Volver a cerrar", () => borrar(f)))];
+  $("cerrSum").textContent = "Días cerrados" + (semanales.length + puntuales.length ? " (" + (semanales.length + puntuales.length) + ")" : "");
+  $("cerrLista").replaceChildren(...(filas.length ? filas : [el("p", { class: "aviso", text: "No hay días cerrados a futuro." })]));
+  const posibles = [1, 2, 3, 4, 5, 6, 0].filter(d => (N.horarios[d] || []).length && !cerradoSemana(d));
+  const previo = $("cerrDow").value;
+  $("cerrDow").replaceChildren(...posibles.map(d => el("option", { value: String(d), text: mayus(todosLos(d)) })));
+  if (posibles.some(d => String(d) === previo)) $("cerrDow").value = previo;
+  $("cerrAtajo").hidden = !posibles.length;
 }
 
 const linkCliente = (t, texto) => U.wa(t.ejemplo ? "" : t.celular, texto);
@@ -219,23 +352,17 @@ async function cancelar(lista) {
   await recargar();
   if (lista.length) $("cancelados").scrollIntoView({ block: "start" });
 }
-async function setDia(abierto) {
-  try { await T.setDia(dia, abierto); } catch (e) { toast("No se pudo cambiar el día."); }
-  await recargar();
-}
-
 $("dSwitch").addEventListener("change", () => {
-  const quiere = $("dSwitch").checked;
-  if (quiere) { confirmando = null; setDia(true); return; }
-  if (confirmadosDe(dia).length) { $("dSwitch").checked = true; confirmando = "cerrar"; pintarDia(); return; }
-  setDia(false);
+  const quiere = $("dSwitch").checked, dow = dowDe(dia);
+  $("dSwitch").checked = !quiere;   // el interruptor se mueve recién cuando se aplica el cambio
+  if (!quiere) return preguntar({ tipo: "cerrar", paso: "alcance", ref: dia, dow });
+  if (cerradoSemana(dow)) return preguntar({ tipo: "abrir", paso: "alcance", ref: dia, dow });
+  pregunta = null; borrar(dia);   // estaba cerrado solo ese día: se borra el cierre y vuelve a la normalidad
 });
-$("dCerrarTodo").addEventListener("click", async () => { const c = confirmadosDe(dia); await T.setDia(dia, false).catch(() => {}); await cancelar(c); });
-$("dSoloCerrar").addEventListener("click", () => { confirmando = null; setDia(false); });
-$("dNoCerrar").addEventListener("click", () => { confirmando = null; pintarDia(); });
-$("dCancelarDia").addEventListener("click", () => {
-  if (confirmando !== "cancelarDia") { confirmando = "cancelarDia"; pintarDia(); return; }
-  cancelar(confirmadosDe(dia));
+$("dCancelarDia").addEventListener("click", () => preguntar({ tipo: "cancelar", paso: "alcance", ref: dia, dow: dowDe(dia) }));
+$("cerrBtn").addEventListener("click", () => {
+  const dow = Number($("cerrDow").value);
+  elegirCierre("semana", { tipo: "cerrar", ref: null, dow });
 });
 $("reiniciar").addEventListener("click", async () => { await T.reiniciar(); await recargar(); });
 $("salir").addEventListener("click", async () => { await T.logout(); if (T.modo === "demo") location.href = "index.html"; });
@@ -256,7 +383,7 @@ $("loginForm").addEventListener("submit", async (e) => {
     if (ok) { await recargar(); }
   });
   // Refresca solo cada minuto y al volver a la app
-  setInterval(() => { if (!$("vPanel").hidden && !confirmando) recargar(); }, 60000);
+  setInterval(() => { if (!$("vPanel").hidden && !confirmando && !pregunta) recargar(); }, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !$("vPanel").hidden) recargar(); });
 })();
 </script>

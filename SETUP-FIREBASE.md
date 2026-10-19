@@ -27,9 +27,12 @@ Cada peluquería usa su propio `id` en `negocio.js`, y sus datos quedan separado
 ## Qué protege y qué no
 - Nadie de afuera puede ver nombres ni celulares de los clientes: solo el peluquero logueado.
 - Dos personas no pueden reservar el mismo horario, porque la base rechaza el segundo intento.
-- Nadie puede reservar un día que el peluquero cerró.
+- Nadie puede reservar un día que el peluquero cerró, sea ese día puntual o todos los jueves (cierre semanal). Las reglas calculan el día de la semana a partir de la fecha.
 - **Límite:** alguien con malas intenciones podría llenar la agenda con turnos falsos. Para un comercio chico es poco probable. Si pasa, se cancelan desde el panel y se puede agregar un captcha.
 - **Datos personales (Ley 18.331):** los nombres y celulares son de los clientes de la peluquería. Usalos solo para los turnos.
+
+## Días cerrados
+El peluquero cierra desde el panel y la web le pregunta "¿Solo ese día o siempre?". Se guardan en la colección `dias`: un documento por fecha (`2026-10-22`) o uno por día de la semana (`semana-4` = todos los jueves; 0 = domingo). No hay que crear nada a mano: se crean solos y las reglas ya los cubren. Si actualizás las reglas de una instalación vieja, volvé a pegar todo `firestore.rules`.
 
 ## Mensaje de cancelación
 Se edita en `negocio.js` → `mensajeCancelacion`. Desde el panel, "Avisar por WhatsApp" abre el chat de cada cliente con el mensaje escrito. Si el peluquero prefiere tener también un `/cancelar` en WhatsApp Business, puede crear una respuesta rápida con el mismo texto.
