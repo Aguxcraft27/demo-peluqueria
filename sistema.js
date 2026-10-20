@@ -90,7 +90,7 @@
   const idsBloques = (f, est, hora, minutos) => bloquesDe(hora, minutos).map(b => idOcupado(f, est, b));
   // Horarios libres para un servicio. estPref = id del estilista o "" (cualquiera).
   function horariosLibres(f, minutos, estPref, ocupados) {
-    const ahora = new Date(), esHoy = f === hoyIso(), minimo = ahora.getHours() * 60 + ahora.getMinutes() + 30;
+    const ahora = new Date(), esHoy = f === hoyIso(), minimo = ahora.getHours() * 60 + ahora.getMinutes() + 15;
     const ests = estPref ? [estPref] : N.equipo.map(e => e.id);
     const out = [];
     for (const [a, b] of tramosDe(f)) {
